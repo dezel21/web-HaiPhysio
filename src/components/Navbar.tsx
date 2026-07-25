@@ -4,7 +4,6 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
-// Tambahan UserCircle untuk icon profil
 import { List, X, UserCircle } from "@phosphor-icons/react"; 
 
 export default function Navbar() {
@@ -27,7 +26,6 @@ export default function Navbar() {
       {/* KIRI: LOGO */}
       <div className="w-[103px] h-[67px] flex items-center justify-start relative">
         <Link href="/">
-          {/* Pastikan file logo.svg di folder public persis seperti visual di gambar */}
           <Image
             src="/fisio_nobg.png"
             alt="Logo Hai Physio"
@@ -40,7 +38,6 @@ export default function Navbar() {
       </div>
 
       {/* TENGAH: MENU NAVIGASI */}
-      {/* Perhatikan perubahan di sini: gap diperbesar menjadi gap-[80px] */}
       <div className="hidden md:flex items-center gap-[80px]">
         {navItems.map((item) => {
           const isActive = pathname === item.path;
@@ -80,7 +77,7 @@ export default function Navbar() {
           </Link>
         )}
 
-        {/* TOMBOL RAHASIA BUAT SIMULASI (Bisa lu hapus nanti) */}
+        {/* TOMBOL RAHASIA BUAT SIMULASI (Bisa dihapus nanti) */}
         <button 
           onClick={() => setIsLoggedIn(!isLoggedIn)}
           className="text-[10px] bg-red-100 text-red-600 px-2 py-1 rounded border border-red-200 hover:bg-red-200 transition-colors"
