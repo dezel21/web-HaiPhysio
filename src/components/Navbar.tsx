@@ -4,11 +4,15 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
-import { List, X } from "@phosphor-icons/react";
+// Tambahan UserCircle untuk icon profil
+import { List, X, UserCircle } from "@phosphor-icons/react"; 
 
 export default function Navbar() {
   const pathname = usePathname();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  
+  // State bohongan untuk simulasi Login/Logout
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   const navItems = [
     { label: "Beranda", path: "/" },
@@ -55,14 +59,35 @@ export default function Navbar() {
         })}
       </div>
 
-      {/* KANAN: TOMBOL CTA */}
-      <div className="hidden md:block">
-        <Link
-          href="/booking"
-          className="flex items-center justify-center w-[224px] h-[48px] bg-[#F5B301] hover:bg-[#dda101] text-white font-medium text-[16px] rounded-md transition-colors"
+      {/* KANAN: TOMBOL CTA & PROFIL (DENGAN LOGIKA AUTH) */}
+      <div className="hidden md:flex items-center gap-4">
+        {isLoggedIn ? (
+          // TAMPILAN JIKA SUDAH LOGIN
+          <div className="flex items-center gap-3 cursor-pointer p-2 hover:bg-gray-50 rounded-lg transition-colors">
+            <div className="flex flex-col items-end">
+              <span className="text-[#1b2a4e] text-[14px] font-bold leading-tight">Halo, Fathir</span>
+              <span className="text-[#585858] text-[12px]">Pasien</span>
+            </div>
+            <UserCircle size={40} weight="light" color="#1b2a4e" />
+          </div>
+        ) : (
+          // TAMPILAN JIKA BELUM LOGIN
+          <Link
+            href="/booking"
+            className="flex items-center justify-center w-[224px] h-[48px] bg-[#F5B301] hover:bg-[#dda101] text-white font-medium text-[16px] rounded-md transition-colors"
+          >
+            Buat Janji Temu
+          </Link>
+        )}
+
+        {/* TOMBOL RAHASIA BUAT SIMULASI (Bisa lu hapus nanti) */}
+        <button 
+          onClick={() => setIsLoggedIn(!isLoggedIn)}
+          className="text-[10px] bg-red-100 text-red-600 px-2 py-1 rounded border border-red-200 hover:bg-red-200 transition-colors"
+          title="Toggle Auth"
         >
-          Buat Janji Temu
-        </Link>
+          Auth
+        </button>
       </div>
 
       {/* HAMBURGER MENU (MOBILE) */}
@@ -90,13 +115,25 @@ export default function Navbar() {
               </Link>
             );
           })}
-          <Link
-            href="/booking"
-            onClick={() => setIsMobileMenuOpen(false)}
-            className="w-full h-[48px] flex items-center justify-center bg-[#F5B301] hover:bg-[#dda101] text-white font-medium text-[16px] rounded-md mt-4"
-          >
-            Buat Janji Temu
-          </Link>
+          
+          {/* LOGIKA AUTH UNTUK MENU MOBILE */}
+          {isLoggedIn ? (
+            <div className="flex items-center gap-3 mt-2 p-3 bg-gray-50 rounded-md border border-gray-100">
+              <UserCircle size={40} weight="light" color="#1b2a4e" />
+              <div className="flex flex-col">
+                <span className="text-[#1b2a4e] text-[15px] font-bold leading-tight">Halo, Fathir</span>
+                <span className="text-[#585858] text-[13px]">Pasien</span>
+              </div>
+            </div>
+          ) : (
+            <Link
+              href="/booking"
+              onClick={() => setIsMobileMenuOpen(false)}
+              className="w-full h-[48px] flex items-center justify-center bg-[#F5B301] hover:bg-[#dda101] text-white font-medium text-[16px] rounded-md mt-4"
+            >
+              Buat Janji Temu
+            </Link>
+          )}
         </div>
       )}
     </nav>
