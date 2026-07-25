@@ -7,9 +7,10 @@ import Stepper from "./Stepper";
 interface Step3Props {
   onBack: () => void;
   onNext: (formData: any) => void;
+  bookingData: any;
 }
 
-export default function Step3IsiData({ onBack, onNext }: Step3Props) {
+export default function Step3IsiData({ onBack, onNext, bookingData }: Step3Props) {
   // Referensi ke input file tersembunyi (dipakai saat user klik kotak putus-putus)
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -35,7 +36,7 @@ export default function Step3IsiData({ onBack, onNext }: Step3Props) {
     const { name, value } = e.target;
     // Update data form sesuai apa yang diketik
     setFormData((prev) => ({ ...prev, [name]: value }));
-    
+
     // Kalau ada error di kotak itu, hapus error-nya karena user sudah mulai ngetik lagi
     if (errors[name as keyof typeof errors]) {
       setErrors((prev) => ({ ...prev, [name]: "" }));
@@ -71,7 +72,7 @@ export default function Step3IsiData({ onBack, onNext }: Step3Props) {
     if (!file) return;
 
     // Cek ukuran file (Maks 10 MB = 10 * 1024 * 1024 bytes)
-    const maxSize = 10 * 1024 * 1024; 
+    const maxSize = 10 * 1024 * 1024;
     if (file.size > maxSize) {
       alert("Ukuran file terlalu besar! Maksimal 10 MB.");
       return;
@@ -93,9 +94,42 @@ export default function Step3IsiData({ onBack, onNext }: Step3Props) {
     }
   };
 
+  // --- LOGIKA FRONT-END: Penterjemah Mock Data Jadwal ---
+  // Fungsi ini membaca ID yang dipilih user dan mengembalikan teks yang sesuai
+  const getScheduleDetails = (id: string) => {
+    const slots: Record<string, any> = {
+      "s1": { time: "Senin, 07 Juli 2026 @ 09:00 WIB", therapist: "Ftr. Andi Pratama" },
+      "s4": { time: "Selasa, 08 Juli 2026 @ 10:00 WIB", therapist: "Ftr. Sari Wijaya, S.Ft" },
+      "s5": { time: "Rabu, 09 Juli 2026 @ 11:00 WIB", therapist: "Ftr. Bintang Dito" },
+      "s7": { time: "Jumat, 11 Juli 2026 @ 15:00 WIB", therapist: "Ftr. Sari Wijaya, S.Ft" },
+      "s9": { time: "Minggu, 13 Juli 2026 @ 13:00 WIB", therapist: "Ftr. Sari Wijaya, S.Ft" },
+    };
+    return slots[id] || { time: "Jadwal Belum Dipilih", therapist: "-" };
+  };
+
+  const scheduleInfo = getScheduleDetails(bookingData.scheduleId);
+  const getServiceName = (id: string) => {
+    // Ubah id jadi huruf kecil semua biar aman kalau ada typo kapital dari Step 1
+    const safeId = id?.toLowerCase() || "";
+
+    if (safeId.includes("olahraga") || safeId === "1") {
+      return "Fisioterapi Olahraga";
+    }
+    if (safeId.includes("muskuloskeletal") || safeId === "2") {
+      return "Fisioterapi Muskuloskeletal";
+    }
+    if (safeId.includes("neurologi") || safeId === "3") {
+      return "Fisioterapi Neurologi";
+    }
+
+    // Kalau ID-nya bener-bener gak dikenali, tampilin apa adanya dari Step 1
+    return id || "Fisioterapi Olahraga (Cedera & Aktivitas Fisik)";
+  };
+
+  const serviceName = getServiceName(bookingData.serviceId);
   return (
     <div className="w-full flex flex-col items-center">
-      
+
       <div className="text-center mb-10">
         <h2 className="text-[32px] md:text-[36px] font-bold text-[#1b2a4e] mb-3">Isi Data Diri & Detail Keluhan</h2>
         <p className="text-[#585858] text-[15px] md:text-[16px]">Pastikan Nama dan Nomor Telepon Anda benar. Data ini otomatis diambil dari profil Anda.</p>
@@ -106,25 +140,28 @@ export default function Step3IsiData({ onBack, onNext }: Step3Props) {
       {/* --- BOX RINGKASAN PILIHAN --- */}
       <div className="w-full bg-[#F8FAFC] border border-[#CBD5E1] rounded-[16px] p-5 mb-8">
         <div className="flex flex-col gap-3 relative">
-          
+
           <div className="flex items-center gap-3 text-[14px]">
             <Stethoscope size={20} weight="bold" className="text-[#3B82F6]" />
             <span className="w-[120px] text-gray-500">Layanan Terpilih</span>
-            <span className="text-[#1b2a4e] font-medium">: Fisioterapi Olahraga (Cedera & Aktivitas Fisik)</span>
+            {/* Teks ini sekarang ngikutin State */}
+            <span className="text-[#1b2a4e] font-medium">: {serviceName}</span>
           </div>
-          
+
           <div className="flex items-center gap-3 text-[14px]">
             <CalendarBlank size={20} weight="bold" className="text-[#3B82F6]" />
             <span className="w-[120px] text-gray-500">Jadwal Terpilih</span>
-            <span className="text-[#1b2a4e] font-medium">: Jumat, 11 Juli 2026 @ 11.00 - 12.00</span>
+            {/* Teks ini sekarang ngikutin State */}
+            <span className="text-[#1b2a4e] font-medium">: {scheduleInfo.time}</span>
           </div>
-          
+
           <div className="flex items-center gap-3 text-[14px]">
             <User size={20} weight="bold" className="text-[#3B82F6]" />
             <span className="w-[120px] text-gray-500">Nama Terapis</span>
-            <span className="text-[#1b2a4e] font-medium">: Ftr. Sari Wijaya, S.Ft</span>
+            {/* Teks ini sekarang ngikutin State */}
+            <span className="text-[#1b2a4e] font-medium">: {scheduleInfo.therapist}</span>
           </div>
-          
+
           <button onClick={onBack} className="absolute right-0 top-1/2 -translate-y-1/2 text-[#F5B301] text-[14px] font-bold px-5 py-2 border border-[#F5B301] rounded-xl bg-white hover:bg-[#FFFBEA]">
             ✎ Ubah
           </button>
@@ -134,15 +171,15 @@ export default function Step3IsiData({ onBack, onNext }: Step3Props) {
       {/* --- FORM KONTAK PASIEN --- */}
       <div className="w-full bg-white border border-gray-200 rounded-[16px] p-8 mb-6">
         <h3 className="flex items-center gap-3 text-[20px] font-bold text-[#1b2a4e] mb-6">
-          <UserCircle size={28} weight="fill" className="text-[#1b2a4e]" /> 
+          <UserCircle size={28} weight="fill" className="text-[#1b2a4e]" />
           Informasi Kontak Pasien
         </h3>
-        
+
         <div className="flex flex-col gap-5">
           <div className="flex flex-col gap-2">
             <label className="text-[14px] font-bold text-[#1b2a4e]">Nama Lengkap</label>
-            <input 
-              type="text" 
+            <input
+              type="text"
               name="name"
               value={formData.name}
               onChange={handleInputChange}
@@ -153,8 +190,8 @@ export default function Step3IsiData({ onBack, onNext }: Step3Props) {
 
           <div className="flex flex-col gap-2">
             <label className="text-[14px] font-bold text-[#1b2a4e]">Nomor Telepon</label>
-            <input 
-              type="text" 
+            <input
+              type="text"
               name="phone"
               value={formData.phone}
               onChange={handleInputChange}
@@ -165,8 +202,8 @@ export default function Step3IsiData({ onBack, onNext }: Step3Props) {
 
           <div className="flex flex-col gap-2">
             <label className="text-[14px] font-bold text-[#1b2a4e]">Email</label>
-            <input 
-              type="email" 
+            <input
+              type="email"
               name="email"
               value={formData.email}
               onChange={handleInputChange}
@@ -180,14 +217,14 @@ export default function Step3IsiData({ onBack, onNext }: Step3Props) {
       {/* --- FORM DETAIL KELUHAN --- */}
       <div className="w-full bg-white border border-gray-200 rounded-[16px] p-8 mb-10">
         <h3 className="flex items-center gap-3 text-[20px] font-bold text-[#1b2a4e] mb-6">
-          <Stethoscope size={28} weight="fill" className="text-[#1b2a4e]" /> 
+          <Stethoscope size={28} weight="fill" className="text-[#1b2a4e]" />
           Detail Keluhan Medis
         </h3>
-        
+
         <div className="flex flex-col gap-6">
           <div className="flex flex-col gap-2">
             <label className="text-[14px] font-bold text-[#1b2a4e]">Keluhan Utama (Opsional)</label>
-            <textarea 
+            <textarea
               name="complaint"
               value={formData.complaint}
               onChange={handleInputChange}
@@ -198,17 +235,17 @@ export default function Step3IsiData({ onBack, onNext }: Step3Props) {
 
           <div className="flex flex-col gap-2">
             <label className="text-[14px] font-bold text-[#1b2a4e]">Unggah Foto Keluhan (Opsional)</label>
-            
-            <input 
-              type="file" 
+
+            <input
+              type="file"
               accept="image/*"
               ref={fileInputRef}
               onChange={handlePhotoUpload}
               className="hidden"
             />
-            
-            <div 
-              onClick={() => fileInputRef.current?.click()} 
+
+            <div
+              onClick={() => fileInputRef.current?.click()}
               className="w-full min-h-[200px] border-2 border-dashed border-gray-300 rounded-xl flex items-center justify-center cursor-pointer hover:bg-gray-50 overflow-hidden relative"
             >
               {formData.photoPreview ? (
@@ -230,7 +267,7 @@ export default function Step3IsiData({ onBack, onNext }: Step3Props) {
         <button onClick={onBack} className="text-[#F5B301] font-bold flex items-center gap-2 px-6 py-3 rounded-[12px] bg-gray-50 hover:bg-yellow-50 transition-colors">
           <span>←</span> Kembali
         </button>
-        <button 
+        <button
           onClick={handleNextClick}
           className="bg-[#F5B301] hover:bg-[#dda101] text-white px-10 py-3 rounded-[12px] font-bold flex items-center gap-2 transition-colors shadow-[0_4px_12px_rgba(245,179,1,0.3)]"
         >

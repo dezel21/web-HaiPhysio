@@ -5,9 +5,9 @@ import Stepper from "./Stepper";
 
 // --- MOCK DATA TERAPIS ---
 const mockTherapists = [
-  { id: "t1", name: "Ftr. Andi Pratama", sp: "Spesialis Neuro & Olahraga", rating: 4.8, patients: "90+" },
-  { id: "t2", name: "Ftr. Sari Wijaya, S.Ft", sp: "Spesialis Olahraga & Muskulo", rating: 4.9, patients: "150+" },
-  { id: "t3", name: "Ftr. Bintang Dito", sp: "Spesialis Olahraga", rating: 4.8, patients: "70+" },
+  { id: "t1", name: "Ftr. Andi Pratama", sp: "Spesialis Neuro & Olahraga", rating: 4.8, patients: "90+", photo: "/dokter-andi-pratama.png" },
+  { id: "t2", name: "Ftr. Sari Wijaya, S.Ft", sp: "Spesialis Olahraga & Muskulo", rating: 4.9, patients: "150+", photo: "/dokter-sari-wijaya.png" },
+  { id: "t3", name: "Ftr. Bintang Dito", sp: "Spesialis Olahraga", rating: 4.8, patients: "70+", photo: "/dokter-bintang-dito.png" },
 ];
 
 // --- MOCK DATA GRID JADWAL ---
@@ -135,7 +135,16 @@ export default function Step2PilihWaktu({ onBack, onNext, selectedServiceId }: S
                     `}
                   >
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 bg-gray-200 rounded-full flex items-center justify-center text-[10px]">Foto</div> 
+                      {/* Foto Dokter - Ukuran diperbesar biar muka jelas! */}
+                    <div className="w-[72px] h-[72px] rounded-full overflow-hidden border border-gray-200 shrink-0 bg-gray-50 shadow-sm">
+                      <img 
+                        src={therapist.photo} 
+                        alt={therapist.name} 
+                        className="w-full h-full object-cover"
+                        onError={(e) => { e.currentTarget.src = "https://ui-avatars.com/api/?name=" + therapist.name + "&background=F5B301&color=fff" }} 
+                      />
+                    </div>
+
                       <div className="flex flex-col">
                         <span className="text-[14px] font-bold text-[#1b2a4e]">{therapist.name}</span>
                         <span className="text-[12px] text-gray-500">{therapist.sp}</span>
