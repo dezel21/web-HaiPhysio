@@ -19,18 +19,18 @@ export default function Navbar() {
 
   return (
     <nav className="sticky top-0 z-50 w-full h-[83px] bg-white shadow-[0px_2px_10px_rgba(0,0,0,0.05)] px-5 md:px-[80px] flex items-center justify-between">
-      
+
       {/* KIRI: LOGO */}
       <div className="w-[103px] h-[67px] flex items-center justify-start relative">
         <Link href="/">
           {/* Pastikan file logo.svg di folder public persis seperti visual di gambar */}
-          <Image 
-            src="/fisio_nobg.png" 
+          <Image
+            src="/fisio_nobg.png"
             alt="Logo Hai Physio"
-            width={103} 
+            width={103}
             height={67}
             priority
-            className="object-contain object-left" 
+            className="object-contain object-left"
           />
         </Link>
       </div>
@@ -44,11 +44,10 @@ export default function Navbar() {
             <Link
               key={item.path}
               href={item.path}
-              className={`text-[16px] transition-all duration-200 ${
-                isActive
-                  ? "font-bold text-[#D69A00]" 
-                  : "font-medium text-[#D69A00] hover:text-[#F5B301]" 
-              }`}
+              className={`text-[16px] transition-all duration-200 ${isActive
+                  ? "font-bold text-[#D69A00]"
+                  : "font-medium text-[#D69A00] hover:text-[#F5B301]"
+                }`}
             >
               {item.label}
             </Link>
@@ -84,9 +83,8 @@ export default function Navbar() {
                 key={item.path}
                 href={item.path}
                 onClick={() => setIsMobileMenuOpen(false)}
-                className={`text-[16px] py-2 border-b border-gray-50 ${
-                  isActive ? "font-bold text-[#D69A00]" : "font-medium text-[#D69A00]"
-                }`}
+                className={`text-[16px] py-2 border-b border-gray-50 ${isActive ? "font-bold text-[#D69A00]" : "font-medium text-[#D69A00]"
+                  }`}
               >
                 {item.label}
               </Link>

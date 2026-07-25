@@ -2,50 +2,15 @@
 
 import Image from "next/image";
 import { Clock, Star, InstagramLogo } from "@phosphor-icons/react";
-
-// Data untuk Section Kenapa Pilih Kami
-const reasonsData = [
-  {
-    id: "pemeriksaan",
-    title: "Pemeriksaan Detail & Personal",
-    desc: "Kami melakukan pencatatan data pemeriksaan yang menyeluruh, baik secara subjektif maupun objektif, untuk memahami akar masalah Anda secara tepat.",
-    imgSrc: "/reason-1.png" // Ganti dengan nama file ekspor ilustrasi 1
-  },
-  {
-    id: "progres",
-    title: "Progres Terapi Terukur",
-    desc: "Evaluasi pemeriksaan terapi dilakukan berkala, sehingga kemajuan terapi Anda benar-benar terpantau dari waktu ke waktu.",
-    imgSrc: "/reason-2.png" // Ganti dengan nama file ekspor ilustrasi 2
-  },
-  {
-    id: "profesional",
-    title: "Ditangani Tenaga Profesional",
-    desc: "Terapis kami memiliki sertifikasi resmi dan berpengalaman dalam menangani berbagai kasus gangguan gerak serta fungsi tubuh dengan metode yang aman.",
-    imgSrc: "/reason-3.png" // Ganti dengan nama file ekspor ilustrasi 3
-  }
-];
+import HeroBanner from "../../components/HeroBanner";
+import { reasonsData } from "../../constants/data";
 
 export default function TentangKami() {
   return (
     <div className="w-full flex flex-col min-h-screen">
       
       {/* 1. HERO BANNER */}
-      <section className="relative w-full h-[240px] md:h-[500px] flex items-center justify-center">
-        <Image
-          src="/hero-tentang-kami.png" 
-          alt="Banner Tentang Kami"
-          fill
-          priority
-          sizes="100vw"
-          className="object-cover object-center"
-        />
-        {/* Overlay gelap tipis agar teks putihnya kontras dan terbaca jelas */}
-        <div className="absolute inset-0 bg-black/30"></div>
-        
-        <h1 className="relative z-10 text-[32px] md:text-[44px] font-bold text-white tracking-wide drop-shadow-md">
-          Tentang Kami
-        </h1>
-      </section>
+      <HeroBanner title="Tentang Kami" imageSrc="/hero-tentang-kami.png" />
 
       {/* 2. SECTION TENTANG HAI PHYSIO */}
       <section className="w-full bg-white max-w-[1440px] mx-auto px-5 md:px-[80px] py-16 md:py-24 flex flex-col lg:flex-row items-center justify-between gap-16 lg:gap-20">
