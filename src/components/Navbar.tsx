@@ -34,7 +34,7 @@ export default function Navbar() {
             width={103}
             height={67}
             priority
-            className="object-contain object-left"
+            className="object-contain object-left w-auto h-auto"
           />
         </Link>
       </div>

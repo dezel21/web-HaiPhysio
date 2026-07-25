@@ -4,8 +4,11 @@ import Navbar from "@/components/Navbar";
 import Footer from "@/components/Footer";
 
 export const metadata: Metadata = {
-  title: "Hai Physio",
-  description: "Klinik Fisioterapi Efektif & Progresif",
+  title: "Hai Physio | Klinik Fisioterapi Efektif & Progresif",
+  description: "Klinik Fisioterapi Hai Physio terpercaya di Jakarta Timur. Melayani fisioterapi muskuloskeletal, neuro, dan olahraga untuk pemulihan yang efektif dan progresif.",
+  icons: {
+    icon: "/fisio_nobg.png", // Ini bakal ngubah ikon bola dunia bawaan Vercel jadi logo klinik
+  },
 };
 
 export default function RootLayout({
