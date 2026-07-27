@@ -1,38 +1,71 @@
 "use client";
 
 import Link from "next/link";
-import { MailCheck } from "lucide-react";
-import { useState } from "react";
+import Image from "next/image";
+import { useEffect, useState } from "react";
 import AuthButton from "./AuthButton";
 import AuthInput from "./AuthInput";
 
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
-export default function ResetPasswordForm() {
-  const [sent, setSent] = useState(false);
+type ResetPasswordFormProps = {
+  sent: boolean;
+  onSentChange: (sent: boolean) => void;
+};
+
+export default function ResetPasswordForm({ sent, onSentChange }: ResetPasswordFormProps) {
   const [email, setEmail] = useState("");
   const [emailError, setEmailError] = useState("");
+  const [cooldown, setCooldown] = useState(120);
+
+  useEffect(() => {
+    if (!sent || cooldown <= 0) {
+      return;
+    }
+
+    const timer = window.setTimeout(() => {
+      setCooldown((current) => current - 1);
+    }, 1000);
+
+    return () => window.clearTimeout(timer);
+  }, [cooldown, sent]);
+
+  function resendLink() {
+    setCooldown(120);
+  }
 
   if (sent) {
     return (
-      <div className="space-y-6 text-center">
-        <div className="mx-auto flex h-16 w-16 items-center justify-center rounded-full bg-[#FBBF24]/15 text-[#F5B301]">
-          <MailCheck size={34} strokeWidth={1.8} />
+      <div className="flex min-h-[430px] flex-col items-center justify-center space-y-6 text-center">
+        <div className="relative mx-auto h-44 w-44 md:h-52 md:w-52">
+          <Image
+            src="/wait-reset.png"
+            alt="Instruksi reset kata sandi terkirim"
+            fill
+            sizes="(max-width: 768px) 176px, 208px"
+            className="object-contain"
+            priority
+          />
         </div>
         <div className="space-y-3">
-          <h2 className="text-[26px] font-bold leading-tight text-[#1b2a4e]">
+          <h2 className="text-[26px] font-bold leading-tight text-[#D69A00]">
             Permintaan Atur Ulang Sandi Terkirim
           </h2>
-          <p className="text-[15px] leading-7 text-slate-600">
+          <p className="text-[15px] leading-7 text-[#707070]">
             Silakan periksa kotak masuk atau folder spam email Anda untuk membuka tautan atur ulang kata sandi.
           </p>
         </div>
         <button
           type="button"
-          onClick={() => setSent(false)}
-          className="h-12 w-full rounded-[8px] border border-[#FBBF24] bg-white px-5 text-[15px] font-semibold text-[#1b2a4e] transition hover:bg-[#FBBF24]/10"
+          disabled={cooldown > 0}
+          onClick={resendLink}
+          className={`h-12 w-full rounded-[8px] border px-5 text-[15px] font-semibold transition ${
+            cooldown > 0
+              ? "cursor-not-allowed border-slate-200 bg-slate-100 text-slate-400"
+              : "border-[#FBBF24] bg-white text-[#1b2a4e] hover:bg-[#FBBF24]/10"
+          }`}
         >
-          Kirim Ulang Tautan
+          {cooldown > 0 ? `Kirim Ulang Tautan (${cooldown}s)` : "Kirim Ulang Tautan"}
         </button>
       </div>
     );
@@ -55,7 +88,8 @@ export default function ResetPasswordForm() {
         }
 
         setEmailError("");
-        setSent(true);
+        setCooldown(120);
+        onSentChange(true);
       }}
     >
       <AuthInput

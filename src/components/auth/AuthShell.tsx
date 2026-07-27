@@ -6,6 +6,7 @@ type AuthShellProps = {
   description: string;
   children: ReactNode;
   illustration?: "patient" | "admin" | "mail";
+  hideHero?: boolean;
 };
 
 const illustrationIcon = {
@@ -19,6 +20,7 @@ export default function AuthShell({
   description,
   children,
   illustration = "patient",
+  hideHero = false,
 }: AuthShellProps) {
   const Icon = illustrationIcon[illustration];
 
@@ -27,7 +29,12 @@ export default function AuthShell({
       <div className="absolute -left-24 top-16 -z-10 h-72 w-72 rounded-full bg-[#FBBF24]/35 blur-3xl" />
       <div className="absolute -right-28 bottom-12 -z-10 h-80 w-80 rounded-full bg-[#FBBF24]/45 blur-3xl" />
 
-      <div className="mx-auto grid w-full max-w-[1180px] items-center gap-10 lg:grid-cols-[1fr_480px]">
+      <div
+        className={`mx-auto grid w-full items-center gap-10 ${
+          hideHero ? "max-w-[560px]" : "max-w-[1180px] lg:grid-cols-[1fr_480px]"
+        }`}
+      >
+        {!hideHero ? (
         <div className="flex min-h-[420px] flex-col justify-center gap-7">
           <div className="max-w-[620px] space-y-5">
             <h1 className="text-[32px] font-bold leading-tight text-[#D69A00] md:text-[52px]">
@@ -38,6 +45,7 @@ export default function AuthShell({
             </p>
           </div>
         </div>
+        ) : null}
 
         <div className="w-full rounded-[8px] bg-white p-6 shadow-[0_24px_80px_rgba(15,23,42,0.14)] ring-1 ring-slate-100 md:p-8">
           {children}
