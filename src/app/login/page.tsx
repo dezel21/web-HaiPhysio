@@ -6,10 +6,10 @@ export default function LoginPage() {
   return (
     <AuthShell
       headline="Kembali Bergerak Bebas Tanpa Nyeri"
-      description="Masuk untuk melihat jadwal terapi, riwayat kunjungan, dan perkembangan pemulihan Anda bersama HaiPhysio."
+      description="Masuk untuk melihat jadwal terapi, riwayat kunjungan, dan perkembangan pemulihan Anda bersama Hai Physio."
     >
       <div className="mb-7 space-y-2">
-        <h2 className="text-[28px] font-bold text-[#1b2a4e]">Masuk</h2>
+        <h2 className="text-[28px] font-bold text-[#1b2a4e]">Selamat Datang</h2>
         <p className="text-[15px] leading-6 text-slate-500">
           Gunakan akun pasien yang sudah terdaftar.
         </p>

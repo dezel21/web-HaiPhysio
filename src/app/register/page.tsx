@@ -11,7 +11,7 @@ export default function RegisterPage() {
       <div className="mb-7 space-y-2">
         <h2 className="text-[28px] font-bold text-[#1b2a4e]">Daftar Pasien</h2>
         <p className="text-[15px] leading-6 text-slate-500">
-          Lengkapi data berikut untuk membuat akun HaiPhysio.
+          Lengkapi data berikut untuk membuat akun Hai Physio.
         </p>
       </div>
 
