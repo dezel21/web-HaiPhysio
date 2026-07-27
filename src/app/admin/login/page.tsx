@@ -1,7 +1,5 @@
 import Link from "next/link";
-import AuthButton from "@/components/auth/AuthButton";
-import AuthInput from "@/components/auth/AuthInput";
-import AuthPasswordInput from "@/components/auth/AuthPasswordInput";
+import AdminLoginForm from "@/components/auth/AdminLoginForm";
 import AuthShell from "@/components/auth/AuthShell";
 
 export default function AdminLoginPage() {
@@ -18,22 +16,7 @@ export default function AdminLoginPage() {
         </p>
       </div>
 
-      <form className="space-y-5">
-        <AuthInput
-          label="Email Admin"
-          name="email"
-          type="email"
-          autoComplete="email"
-          placeholder="example@email.com"
-        />
-        <AuthPasswordInput
-          label="Kata Sandi"
-          name="password"
-          autoComplete="current-password"
-          placeholder="********"
-        />
-        <AuthButton>Masuk ke Dashboard</AuthButton>
-      </form>
+      <AdminLoginForm />
 
       <Link
         href="/"

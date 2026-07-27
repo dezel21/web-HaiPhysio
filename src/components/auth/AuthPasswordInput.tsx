@@ -6,11 +6,13 @@ import { useState } from "react";
 
 type AuthPasswordInputProps = Omit<InputHTMLAttributes<HTMLInputElement>, "type"> & {
   label: string;
+  error?: string;
 };
 
 export default function AuthPasswordInput({
   label,
   className = "",
+  error,
   id,
   ...props
 }: AuthPasswordInputProps) {
@@ -25,7 +27,13 @@ export default function AuthPasswordInput({
         <input
           id={inputId}
           type={showPassword ? "text" : "password"}
-          className={`h-12 w-full rounded-[8px] border border-slate-200 bg-white px-4 pr-12 text-[15px] text-slate-800 outline-none transition focus:border-[#FBBF24] focus:ring-4 focus:ring-[#FBBF24]/20 ${className}`}
+          aria-invalid={Boolean(error)}
+          aria-describedby={error ? `${inputId}-error` : undefined}
+          className={`h-12 w-full rounded-[8px] border bg-white px-4 pr-12 text-[15px] text-slate-800 outline-none transition placeholder:text-slate-400 ${
+            error
+              ? "border-red-500 focus:border-red-500 focus:ring-4 focus:ring-red-500/15"
+              : "border-slate-200 focus:border-[#FBBF24] focus:ring-4 focus:ring-[#FBBF24]/20"
+          } ${className}`}
           {...props}
         />
         <button
@@ -37,6 +45,11 @@ export default function AuthPasswordInput({
           <Icon size={20} strokeWidth={2} />
         </button>
       </span>
+      {error ? (
+        <span id={`${inputId}-error`} className="text-[13px] leading-5 text-red-600">
+          {error}
+        </span>
+      ) : null}
     </label>
   );
 }

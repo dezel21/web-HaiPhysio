@@ -6,8 +6,12 @@ import { useState } from "react";
 import AuthButton from "./AuthButton";
 import AuthInput from "./AuthInput";
 
+const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 export default function ResetPasswordForm() {
   const [sent, setSent] = useState(false);
+  const [email, setEmail] = useState("");
+  const [emailError, setEmailError] = useState("");
 
   if (sent) {
     return (
@@ -37,8 +41,20 @@ export default function ResetPasswordForm() {
   return (
     <form
       className="space-y-5"
+      noValidate
       onSubmit={(event) => {
         event.preventDefault();
+        if (!email.trim()) {
+          setEmailError("Email wajib diisi.");
+          return;
+        }
+
+        if (!emailPattern.test(email)) {
+          setEmailError("Masukkan format email yang valid.");
+          return;
+        }
+
+        setEmailError("");
         setSent(true);
       }}
     >
@@ -47,7 +63,10 @@ export default function ResetPasswordForm() {
         name="email"
         type="email"
         autoComplete="email"
-        placeholder="example@email.com"
+        placeholder="contoh@email.com"
+        value={email}
+        onChange={(event) => setEmail(event.target.value)}
+        error={emailError}
       />
       <AuthButton>Kirim Instruksi Reset</AuthButton>
       <Link

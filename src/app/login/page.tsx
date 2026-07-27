@@ -1,8 +1,6 @@
 import Link from "next/link";
-import AuthButton from "@/components/auth/AuthButton";
-import AuthInput from "@/components/auth/AuthInput";
-import AuthPasswordInput from "@/components/auth/AuthPasswordInput";
 import AuthShell from "@/components/auth/AuthShell";
+import LoginForm from "@/components/auth/LoginForm";
 
 export default function LoginPage() {
   return (
@@ -17,28 +15,7 @@ export default function LoginPage() {
         </p>
       </div>
 
-      <form className="space-y-5">
-        <AuthInput
-          label="Email"
-          name="email"
-          type="email"
-          autoComplete="email"
-          placeholder="example@email.com"
-        />
-        <AuthPasswordInput
-          label="Kata Sandi"
-          name="password"
-          autoComplete="current-password"
-          placeholder="********"
-        />
-        <Link
-          href="/reset-password"
-          className="block text-right text-[14px] font-semibold text-[#1b2a4e] hover:text-[#F5B301]"
-        >
-          Lupa kata sandi?
-        </Link>
-        <AuthButton>Masuk</AuthButton>
-      </form>
+      <LoginForm />
 
       <p className="mt-7 text-center text-[14px] text-slate-600">
         Belum punya akun?{" "}
