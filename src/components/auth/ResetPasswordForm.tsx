@@ -42,7 +42,13 @@ export default function ResetPasswordForm() {
         setSent(true);
       }}
     >
-      <AuthInput label="Email" name="email" type="email" autoComplete="email" />
+      <AuthInput
+        label="Email"
+        name="email"
+        type="email"
+        autoComplete="email"
+        placeholder="example@email.com"
+      />
       <AuthButton>Kirim Instruksi Reset</AuthButton>
       <Link
         href="/login"

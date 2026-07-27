@@ -18,8 +18,19 @@ export default function LoginPage() {
       </div>
 
       <form className="space-y-5">
-        <AuthInput label="Email" name="email" type="email" autoComplete="email" />
-        <AuthPasswordInput label="Kata Sandi" name="password" autoComplete="current-password" />
+        <AuthInput
+          label="Email"
+          name="email"
+          type="email"
+          autoComplete="email"
+          placeholder="example@email.com"
+        />
+        <AuthPasswordInput
+          label="Kata Sandi"
+          name="password"
+          autoComplete="current-password"
+          placeholder="********"
+        />
         <Link
           href="/reset-password"
           className="block text-right text-[14px] font-semibold text-[#1b2a4e] hover:text-[#F5B301]"

@@ -11,12 +11,35 @@ export default function RegisterForm() {
 
   return (
     <form className="space-y-4">
-      <AuthInput label="Nama Lengkap" name="name" type="text" autoComplete="name" />
-      <AuthInput label="Email" name="email" type="email" autoComplete="email" />
-      <AuthInput label="No. Telepon" name="phone" type="tel" autoComplete="tel" />
+      <AuthInput
+        label="Nama Lengkap"
+        name="name"
+        type="text"
+        autoComplete="name"
+        placeholder="Tulis Nama Lengkap Anda"
+      />
+      <AuthInput
+        label="Email"
+        name="email"
+        type="email"
+        autoComplete="email"
+        placeholder="example@email.com"
+      />
+      <AuthInput
+        label="No. Telepon"
+        name="phone"
+        type="tel"
+        autoComplete="tel"
+        placeholder="0812 3456 7890"
+      />
       <AuthInput label="Tanggal Lahir" name="birthDate" type="date" />
       <div className="space-y-2">
-        <AuthPasswordInput label="Kata Sandi" name="password" autoComplete="new-password" />
+        <AuthPasswordInput
+          label="Kata Sandi"
+          name="password"
+          autoComplete="new-password"
+          placeholder="********"
+        />
         <p className="text-[13px] leading-5 text-slate-500">
           Gunakan minimal 8 karakter dengan kombinasi huruf dan angka
         </p>
@@ -25,6 +48,7 @@ export default function RegisterForm() {
         label="Konfirmasi Kata Sandi"
         name="confirmPassword"
         autoComplete="new-password"
+        placeholder="********"
       />
 
       <label className="flex items-start gap-3 text-[14px] leading-6 text-slate-600">

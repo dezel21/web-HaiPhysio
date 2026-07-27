@@ -19,8 +19,19 @@ export default function AdminLoginPage() {
       </div>
 
       <form className="space-y-5">
-        <AuthInput label="Email Admin" name="email" type="email" autoComplete="email" />
-        <AuthPasswordInput label="Kata Sandi" name="password" autoComplete="current-password" />
+        <AuthInput
+          label="Email Admin"
+          name="email"
+          type="email"
+          autoComplete="email"
+          placeholder="example@email.com"
+        />
+        <AuthPasswordInput
+          label="Kata Sandi"
+          name="password"
+          autoComplete="current-password"
+          placeholder="********"
+        />
         <AuthButton>Masuk ke Dashboard</AuthButton>
       </form>
 
