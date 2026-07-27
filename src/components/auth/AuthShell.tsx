@@ -3,7 +3,7 @@ import { Activity, ClipboardCheck, ShieldCheck } from "lucide-react";
 
 type AuthShellProps = {
   headline: string;
-  description: string;
+  description?: string;
   children: ReactNode;
   illustration?: "patient" | "admin" | "mail";
   hideHero?: boolean;
@@ -40,9 +40,11 @@ export default function AuthShell({
             <h1 className="text-[32px] font-bold leading-tight text-[#D69A00] md:text-[52px]">
               {headline}
             </h1>
-            <p className="max-w-[540px] text-[16px] leading-7 text-[#707070] md:text-[18px]">
-              {description}
-            </p>
+            {description ? (
+              <p className="max-w-[540px] text-[16px] leading-7 text-[#707070] md:text-[18px]">
+                {description}
+              </p>
+            ) : null}
           </div>
         </div>
         ) : null}
