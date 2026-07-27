@@ -13,6 +13,7 @@ export default function Navbar() {
   
   // State bohongan untuk simulasi Login/Logout
   const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const appointmentHref = isLoggedIn ? "/booking" : "/login";
 
   const navItems = [
     { label: "Beranda", path: "/" },
@@ -73,7 +74,7 @@ export default function Navbar() {
         ) : (
           // TAMPILAN JIKA BELUM LOGIN
           <Link
-            href="/booking"
+            href={appointmentHref}
             className="flex items-center justify-center w-[224px] h-[48px] bg-[#F5B301] hover:bg-[#dda101] text-white font-medium text-[16px] rounded-md transition-colors"
           >
             Buat Janji Temu
@@ -127,7 +128,7 @@ export default function Navbar() {
             </div>
           ) : (
             <Link
-              href="/booking"
+              href={appointmentHref}
               onClick={() => setIsMobileMenuOpen(false)}
               className="w-full h-[48px] flex items-center justify-center bg-[#F5B301] hover:bg-[#dda101] text-white font-medium text-[16px] rounded-md mt-4"
             >
