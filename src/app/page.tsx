@@ -2,13 +2,12 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import FokusLayanan from "../components/FokusLayanan";
-import LocationMap from "../components/LocationMap";
-// import ContactSection from "../components/ContactSection";
+import FokusLayanan from "@/components/home/FokusLayanan";
+import LocationMap from "@/components/home/LocationMap";
+import ContactSection from "@/components/home/ContactSection";
 import {
   Star,
-  Clock, // diapus kalo mau diganti
-  WhatsappLogo, // diapus kalo mau diganti
+  Clock,
   InstagramLogo,
   ArrowRight,
   EnvelopeSimple
@@ -132,89 +131,8 @@ export default function Beranda() {
       <FokusLayanan />
 
       {/* 4. SECTION HUBUNGI KAMI */}
-      {/*<ContactSection   // diapus kalo mo diganti
-      title="Hubungi Kami"
-      subtitle="Jangan ragu untuk menghubungi kami jika ada pertanyaan lebih lanjut."
-    />*/}
+      <ContactSection title="Hubungi Kami" subtitle="Jangan ragu untuk menghubungi kami jika ada pertanyaan lebih lanjut."/>
 
-      <section className="w-full bg-[#F8F9FA] pb-16 md:pb-24 pt-12">
-        <div className="w-full max-w-[1440px] mx-auto px-5 md:px-[80px] flex flex-col gap-10">
-
-          {/* Header Judul */}
-          <div className="flex flex-col items-center text-center gap-3">
-            <h2 className="text-[28px] md:text-[36px] font-bold text-[#F5B301]">
-              Hubungi Kami
-            </h2>
-            <p className="text-[#585858] text-[16px] max-w-800px]">
-              Masih ragu ingin booking yang mana? Chat dulu lewat WhatsApp, respon cepat di jam operasional.
-            </p>
-          </div>
-
-          {/* Grid Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-
-            {/* Card WhatsApp */}
-            <Link
-              href="https://wa.me/628983050149"
-              target="_blank"
-              className="flex flex-col items-center justify-center text-center bg-white rounded-[16px] p-8 shadow-[0_4px_20px_rgb(0,0,0,0.05)] border border-gray-100 gap-4 hover:shadow-md transition-shadow"
-            >
-              <div className="flex items-center gap-3"> {/* biru gelap #1b2a4e atau biru terang #4C67A0 */}
-                <WhatsappLogo size={32} weight="fill" color="#4C67A0" />
-                <span className="text-[#4C67A0] text-[20px] md:text-[22px] font-bold">+62 898-3050-149</span>
-              </div>
-              <p className="text-[#585858] text-[14px]">Chat langsung, respon cepat di jam operasional</p>
-            </Link>
-
-            {/* Card Email */}
-            <Link
-              href="mailto:haiphysio@gmail.com"
-              className="flex flex-col items-center justify-center text-center bg-white rounded-[16px] p-8 shadow-[0_4px_20px_rgb(0,0,0,0.05)] border border-gray-100 gap-4 hover:shadow-md transition-shadow"
-            >
-              <div className="flex items-center gap-3">
-                <EnvelopeSimple size={32} weight="fill" color="#1b2a4e" />
-                <span className="text-[#1b2a4e] text-[20px] md:text-[22px] font-bold">haiphysio@gmail.com</span>
-              </div>
-              <p className="text-[#585858] text-[14px]">Untuk pertanyaan yang butuh jawaban lebih detail</p>
-            </Link>
-
-            {/* Card Instagram */}
-            <Link
-              href="https://instagram.com/fisioterapi_jakarta_timur"
-              target="_blank"
-              className="flex flex-col items-center justify-center text-center bg-white rounded-[16px] p-8 shadow-[0_4px_20px_rgb(0,0,0,0.05)] border border-gray-100 gap-4 hover:shadow-md transition-shadow"
-            >
-              <div className="flex items-center gap-3">
-                <InstagramLogo size={32} weight="fill" color="#1b2a4e" />
-                <span className="text-[#1b2a4e] text-[20px] md:text-[22px] font-bold">@fisioterapi_jakarta_timur</span>
-              </div>
-              <p className="text-[#585858] text-[14px]">Lihat kegiatan dan info terbaru dari klinik</p>
-            </Link>
-
-            {/* Card Jam Operasional (Span 3 Kolom) */}
-            <div className="md:col-span-3 flex flex-col items-center justify-center text-center bg-white rounded-[16px] p-8 shadow-[0_4px_20px_rgb(0,0,0,0.05)] border border-gray-100 gap-4">
-              <div className="flex items-center gap-4">
-                <Clock size={36} weight="fill" color="#1b2a4e" />
-                <span className="text-[#1b2a4e] text-[20px] md:text-[22px] font-bold text-left leading-tight">
-                  Senin - Sabtu,<br />08.00 - 16.00 WIB
-                </span>
-              </div>
-              <p className="text-[#585858] text-[14px]">Hari minggu klinik tutup</p>
-            </div>
-
-          </div>
-
-          {/* Tombol CTA Hubungi Kami */}
-          <Link
-            href="/kontak"
-            className="w-full h-[56px] flex items-center justify-center gap-2 bg-[#F5B301] hover:bg-[#dda101] text-white font-semibold text-[16px] rounded-[12px] transition-colors"
-          >
-            Hubungi Kami
-            <ArrowRight size={20} weight="bold" />
-          </Link>
-
-        </div>
-      </section>
 
       {/* 5. SECTION LOKASI KLINIK */}
       <LocationMap />

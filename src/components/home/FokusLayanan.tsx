@@ -1,5 +1,5 @@
 import Image from "next/image";
-import { servicesData } from "../constants/data";
+import { servicesData } from "@/constants/data";
 
 interface FokusLayananProps {
   className?: string; // Prop opsional untuk ngubah warna background/spasi dari luar

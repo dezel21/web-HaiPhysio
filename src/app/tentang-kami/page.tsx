@@ -2,22 +2,22 @@
 
 import Image from "next/image";
 import { Clock, Star, InstagramLogo } from "@phosphor-icons/react";
-import HeroBanner from "../../components/HeroBanner";
+import HeroBanner from "../../components/home/HeroBanner";
 import { reasonsData } from "../../constants/data";
 
 export default function TentangKami() {
   return (
     <div className="w-full flex flex-col min-h-screen">
-      
+
       {/* 1. HERO BANNER */}
       <HeroBanner title="Tentang Kami" imageSrc="/hero-tentang-kami.png" />
 
       {/* 2. SECTION TENTANG HAI PHYSIO */}
       <section className="w-full bg-white max-w-[1440px] mx-auto px-5 md:px-[80px] py-16 md:py-24 flex flex-col lg:flex-row items-center justify-between gap-16 lg:gap-20">
-        
+
         {/* KOLOM KIRI: Gambar Utama & Floating Cards (Reuse dari Beranda) */}
         <div className="relative w-full max-w-[480px] mx-auto lg:mx-0">
-          
+
           {/* Gambar Utama */}
           <div className="relative w-full aspect-[4/5] rounded-[16px] overflow-hidden shadow-lg">
             <Image
@@ -35,7 +35,7 @@ export default function TentangKami() {
             <div className="flex flex-col">
               <span className="text-[#1b2a4e] font-bold text-[14px]">Jam operasional</span>
               <span className="text-[#585858] text-[12px] leading-tight mt-1">
-                Senin-Sabtu, 08.00-16.00 WIB<br/>(Minggu tutup)
+                Senin-Sabtu, 08.00-16.00 WIB<br />(Minggu tutup)
               </span>
             </div>
           </div>
@@ -46,7 +46,7 @@ export default function TentangKami() {
             <div className="flex flex-col">
               <span className="text-[#1b2a4e] font-bold text-[14px]">Motto Klinik</span>
               <span className="text-[#585858] text-[12px] leading-tight mt-1">
-                Efektif &<br/>Progresif
+                Efektif &<br />Progresif
               </span>
             </div>
           </div>
@@ -64,7 +64,7 @@ export default function TentangKami() {
 
         {/* KOLOM KANAN: Teks Deskripsi */}
         <div className="flex flex-col flex-1 max-w-[640px] gap-6">
-          
+
           <div className="flex flex-col gap-4">
             <h2 className="text-[28px] md:text-[36px] font-bold text-[#F5B301]">
               Tentang Hai Physio
@@ -80,7 +80,7 @@ export default function TentangKami() {
               Motto kami <span className="font-bold text-[#1b2a4e]">"Efektif dan Progresif"</span> kami jalankan lewat pencatatan. Tiap sesi terapi ada datanya, sehingga progres pasien bisa dipantau dari waktu ke waktu.
             </p>
           </div>
-          
+
           {/* Tidak ada tombol "Selengkapnya" di halaman ini sesuai desain */}
 
         </div>
@@ -88,7 +88,7 @@ export default function TentangKami() {
       {/* 3. SECTION KENAPA PILIH KAMI? */}
       <section className="w-full bg-[#F8F9FA] py-16 md:py-24">
         <div className="w-full max-w-[1440px] mx-auto px-5 md:px-[80px] flex flex-col gap-12">
-          
+
           {/* Header Judul */}
           <div className="flex flex-col items-center text-center gap-3">
             <h2 className="text-[28px] md:text-[36px] font-bold text-[#F5B301]">
@@ -102,8 +102,8 @@ export default function TentangKami() {
           {/* Grid 3 Kartu */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {reasonsData.map((reason) => (
-              <div 
-                key={reason.id} 
+              <div
+                key={reason.id}
                 className="flex flex-col items-center text-center bg-white rounded-[24px] p-8 shadow-[0_4px_20px_rgb(0,0,0,0.05)] border border-gray-100 gap-6"
               >
                 {/* Kontainer Ilustrasi */}
@@ -114,10 +114,10 @@ export default function TentangKami() {
                     fill
                     sizes="(max-width: 768px) 160px, 180px"
                     // Menggunakan object-contain agar ilustrasi tidak terpotong (crop)
-                    className="object-contain" 
+                    className="object-contain"
                   />
                 </div>
-                
+
                 {/* Teks Konten */}
                 <div className="flex flex-col gap-3">
                   <h3 className="text-[#1b2a4e] text-[20px] font-bold leading-tight">
