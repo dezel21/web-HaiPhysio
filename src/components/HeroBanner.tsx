@@ -8,7 +8,7 @@ interface HeroBannerProps {
 
 export default function HeroBanner({ title, imageSrc }: HeroBannerProps) {
   return (
-    <section className="relative w-full h-[240px] md:h-[320px] flex items-center justify-center">
+    <section className="relative w-full h-[240px] md:h-[500px] flex items-center justify-center">
       <Image
         src={imageSrc} 
         alt={`Banner ${title}`}

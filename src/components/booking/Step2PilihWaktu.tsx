@@ -135,7 +135,7 @@ export default function Step2PilihWaktu({ onBack, onNext, selectedServiceId }: S
                     `}
                   >
                     <div className="flex items-center gap-3">
-                      {/* Foto Dokter - Ukuran diperbesar biar muka jelas! */}
+                      {/* Foto Dokter */}
                     <div className="w-[72px] h-[72px] rounded-full overflow-hidden border border-gray-200 shrink-0 bg-gray-50 shadow-sm">
                       <img 
                         src={therapist.photo} 
