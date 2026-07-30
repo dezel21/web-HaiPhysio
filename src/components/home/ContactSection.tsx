@@ -16,7 +16,7 @@ export default function ContactSection({
 }: ContactSectionProps) {
   return (
     <section className="w-full bg-[#F8F9FA] py-16 md:py-24">
-      <div className="w-full max-w-[1440px] mx-auto px-5 md:px-[80px] flex flex-col gap-10">
+     <div className="w-full max-w-[1440px] mx-auto px-5 md:px-8 lg:px-[80px] flex flex-col gap-10">
         
         {/* Header Judul Dinamis */}
         <div className="flex flex-col items-center text-center gap-3">
@@ -29,7 +29,7 @@ export default function ContactSection({
         </div>
 
         {/* Grid Cards (Fix 3 Kolom) */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
           
           {/* Card WhatsApp */}
           <Link href="https://wa.me/628983050149" target="_blank" className="flex flex-col items-center justify-center text-center bg-white rounded-[16px] p-8 shadow-[0_4px_20px_rgb(0,0,0,0.05)] border border-gray-100 gap-4 hover:shadow-md transition-shadow">
@@ -41,10 +41,10 @@ export default function ContactSection({
           </Link>
 
           {/* Card Email */}
-          <Link href="mailto:haiphysio@gmail.com" className="flex flex-col items-center justify-center text-center bg-white rounded-[16px] p-8 shadow-[0_4px_20px_rgb(0,0,0,0.05)] border border-gray-100 gap-4 hover:shadow-md transition-shadow">
-            <div className="flex items-center gap-3">
-              <EnvelopeSimple size={32} weight="fill" color="#1b2a4e" />
-              <span className="text-[#1b2a4e] text-[20px] md:text-[22px] font-bold">haiphysio@gmail.com</span>
+          <Link href="mailto:haiphysio@gmail.com" className="flex flex-col items-center justify-center text-center bg-white rounded-[16px] p-6 shadow-[0_4px_20px_rgb(0,0,0,0.05)] border border-gray-100 gap-4 hover:shadow-md transition-shadow">
+            <div className="flex items-center gap-3 w-full justify-center">
+              <EnvelopeSimple size={32} weight="fill" color="#1b2a4e" className="shrink-0" />
+              <span className="text-[#1b2a4e] text-[20px] md:text-[22px] lg:text-[22px] font-bold">haiphysio@gmail.com</span>
             </div>
             <p className="text-[#585858] text-[14px]">Untuk pertanyaan yang butuh jawaban lebih detail</p>
           </Link>
@@ -59,7 +59,7 @@ export default function ContactSection({
           </Link>
 
           {/* Card Jam Operasional */}
-          <div className="md:col-span-3 flex flex-col items-center justify-center text-center bg-white rounded-[16px] p-8 shadow-[0_4px_20px_rgb(0,0,0,0.05)] border border-gray-100 gap-4">
+          <div className="md:col-span-2 xl:col-span-3 flex flex-col items-center justify-center text-center bg-white rounded-[16px] p-6 shadow-sm border border-gray-100">
             <div className="flex items-center gap-4">
               <Clock size={36} weight="fill" color="#1b2a4e" />
               <span className="text-[#1b2a4e] text-[20px] md:text-[22px] font-bold text-left leading-tight">
@@ -71,7 +71,6 @@ export default function ContactSection({
 
         </div>
 
-        {/* Slot untuk elemen tambahan (misal: tombol) */}
         {children}
 
       </div>

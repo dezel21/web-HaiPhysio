@@ -7,7 +7,7 @@ import { reasonsData } from "../../constants/data";
 
 export default function TentangKami() {
   return (
-    <div className="w-full flex flex-col min-h-screen">
+    <div className="w-full flex flex-col">
 
       {/* 1. HERO BANNER */}
       <HeroBanner title="Tentang Kami" imageSrc="/hero-tentang-kami.png" />

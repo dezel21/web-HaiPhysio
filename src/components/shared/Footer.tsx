@@ -12,14 +12,11 @@ import {
 
 export default function Footer() {
   return (
-    // Tambahan m-0 dan border-none untuk mencegah gap dari sisi footer
-    <footer className="w-full bg-[#24365C] px-5 lg:px-[80px] pt-10 pb-6 flex flex-col justify-between m-0 border-none">
-      
-      {/* Hapus semua gap statis (seperti gap-8) di mode desktop agar justify-between mendorong kolom mentok ke ujung kiri & kanan */}
-      <div className="w-full max-w-[1440px] mx-auto flex flex-col lg:flex-row justify-between items-start">
+    <footer className="w-full bg-[#24365C] px-5 lg:px-[80px] pt-10 pb-6 flex flex-col justify-between m-0 border-none mt-auto">
+      <div className="w-full max-w-[1440px] mx-auto grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-10 items-start">
         
         {/* KOLOM 1: Branding & Deskripsi (Mentok Kiri) */}
-        <div className="flex flex-col max-w-[320px]">
+        <div className="flex flex-col w-full">
           <div className="flex items-center gap-4 mb-3">
             {/* Tambahan overflow-hidden dan text ukuran kecil agar kalau logo gagal load, teks alt-nya tidak meluber jelek */}
             <div className="w-[80px] h-[80px] bg-white rounded-full flex items-center justify-center shrink-0 shadow-sm overflow-hidden text-[10px] text-gray-400 text-center">
@@ -89,7 +86,7 @@ export default function Footer() {
         </div>
 
         {/* KOLOM 4: Lokasi & Jam Operasional (Mentok Kanan) */}
-        <div className="flex flex-col gap-4 max-w-[340px] mt-8 lg:mt-0">
+        <div className="flex flex-col gap-4 w-full mt-8 lg:mt-0">
           <h4 className="text-[#FFFFFF] text-[16px] font-semibold tracking-wide uppercase">
             LOKASI & JAM OPERASIONAL KLINIK
           </h4>

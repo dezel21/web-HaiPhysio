@@ -17,7 +17,7 @@ export default function Beranda() {
   const isLoggedIn = false;
 
   return (
-    <div className="w-full flex flex-col min-h-screen">
+    <div className="w-full flex flex-col">
 
       {/* 1. HERO SECTION */}
       <section className="w-full bg-white max-w-[1440px] mx-auto px-5 md:px-[30px] pt-4 md:pt-6">

@@ -20,7 +20,7 @@ import {
 
 export default function Layanan() {
   return (
-    <div className="w-full flex flex-col min-h-screen">
+    <div className="w-full flex flex-col">
 
       {/* 1. HERO BANNER LAYANAN */}
       <HeroBanner title="Layanan" imageSrc="/hero-layanan.png" />

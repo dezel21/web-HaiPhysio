@@ -11,20 +11,16 @@ export const metadata: Metadata = {
   },
 };
 
-export default function RootLayout({
-  children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="id">
-      <body className="flex flex-col min-h-screen">
+    <html lang="id" className="h-full">
+      <body className="flex flex-col h-full min-h-[100dvh] overflow-x-hidden bg-white">
         <Navbar />
-        <main className="flex-grow">
+        <main className="flex-1 flex flex-col w-full">
           {children}
         </main>
         <Footer />
       </body>
     </html>
   );
-  }
+}

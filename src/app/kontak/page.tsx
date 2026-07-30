@@ -14,7 +14,7 @@ export default function KontakKami() {
   const isLoggedIn = false;
 
   return (
-    <div className="w-full flex flex-col min-h-screen">
+    <div className="w-full flex flex-col">
 
       {/* 1. HERO BANNER KONTAK */}
       <HeroBanner title="Kontak Kami" imageSrc="/hero-kontak.png" />
