@@ -1,7 +1,7 @@
 "use client";
 
 import type { InputHTMLAttributes } from "react";
-import { Eye, EyeOff } from "lucide-react";
+import { Eye, EyeSlash } from "@phosphor-icons/react";
 import { useState } from "react";
 
 type AuthPasswordInputProps = Omit<InputHTMLAttributes<HTMLInputElement>, "type"> & {
@@ -18,7 +18,7 @@ export default function AuthPasswordInput({
 }: AuthPasswordInputProps) {
   const [showPassword, setShowPassword] = useState(false);
   const inputId = id ?? props.name ?? label.toLowerCase().replace(/\s+/g, "-");
-  const Icon = showPassword ? EyeOff : Eye;
+  const Icon = showPassword ? EyeSlash : Eye;
 
   return (
     <label htmlFor={inputId} className="flex flex-col gap-2">

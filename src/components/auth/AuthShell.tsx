@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { Activity, ClipboardCheck, ShieldCheck } from "lucide-react";
+import { Heartbeat, ClipboardText, ShieldCheck } from "@phosphor-icons/react";
 
 type AuthShellProps = {
   headline: string;
@@ -10,9 +10,9 @@ type AuthShellProps = {
 };
 
 const illustrationIcon = {
-  patient: Activity,
+  patient: Heartbeat,
   admin: ShieldCheck,
-  mail: ClipboardCheck,
+  mail: ClipboardText,
 };
 
 export default function AuthShell({
