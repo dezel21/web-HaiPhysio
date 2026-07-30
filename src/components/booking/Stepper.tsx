@@ -68,7 +68,7 @@ export default function Stepper({ currentStep }: { currentStep: number }) {
                                     {step.label}
                                 </span>
                                 {/* Teks Deskripsi (Contoh: Pilih Layanan) */}
-                                <span className={`text-[12px] ${isActive ? "text-[#585858]" : "text-gray-400"}`}>
+                                <span className={`hidden md:block text-[12px] ${isActive ? "text-[#585858]" : "text-gray-400"}`}>
                                     {step.desc}
                                 </span>
                             </div>

@@ -84,7 +84,7 @@ export default function Step2PilihWaktu({ onBack, onNext, selectedServiceId }: S
 
       <Stepper currentStep={2} />
 
-      <div className="w-full flex flex-col md:flex-row gap-6 mb-8">
+      <div className="w-full flex flex-col lg:flex-row gap-6 mb-8">
         
         {/* --- UI KALENDER MINI --- */}
         <div className="w-full md:w-[320px] bg-white border border-gray-200 rounded-[16px] p-6 h-fit">

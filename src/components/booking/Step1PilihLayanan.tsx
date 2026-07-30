@@ -26,7 +26,7 @@ export default function Step1PilihLayanan({ onNext }: Step1Props) {
       <Stepper currentStep={1} />
 
       {/* Bagian Pembungkus 3 Kartu Layanan (Grid) */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 w-full mb-10">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 w-full mb-10">
         
         {/* Looping data dari servicesData buat bikin kartunya satu per satu */}
         {servicesData.map((service) => {
