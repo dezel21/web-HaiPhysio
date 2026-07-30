@@ -21,7 +21,7 @@ export default function FokusLayanan({ className = "bg-white py-16 md:py-24" }: 
         </div>
 
         {/* Grid Cards (Ambil data otomatis dari SSOT) */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {servicesData.map((service) => (
             <div key={service.id} className="flex flex-col bg-white rounded-[24px] overflow-hidden shadow-[0_4px_20px_rgb(0,0,0,0.05)] border border-gray-100 p-6 gap-6">
               <div className="relative w-full h-[180px] rounded-[12px] overflow-hidden">
