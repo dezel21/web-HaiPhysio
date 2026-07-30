@@ -2,9 +2,9 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import HeroBanner from "../../components/HeroBanner";
-import LocationMap from "../../components/LocationMap";
-import ContactSection from "../../components/ContactSection";
+import HeroBanner from "../../components/home/HeroBanner";
+import LocationMap from "../../components/home/LocationMap";
+import ContactSection from "../../components/home/ContactSection";
 import {
   EnvelopeSimple,
   InstagramLogo
@@ -15,13 +15,13 @@ export default function KontakKami() {
 
   return (
     <div className="w-full flex flex-col min-h-screen">
-      
+
       {/* 1. HERO BANNER KONTAK */}
       <HeroBanner title="Kontak Kami" imageSrc="/hero-kontak.png" />
 
       {/* 2. SECTION HUBUNGI KAMI */}
-      <ContactSection 
-        title="Masih Ada yang Ingin Ditanyakan?" 
+      <ContactSection
+        title="Masih Ada yang Ingin Ditanyakan?"
         subtitle="Hubungi kami lewat WhatsApp atau Email, atau langsung datang ke klinik."
       >
         {/* Tombol CTA JANJI TEMU */}
