@@ -1,35 +1,121 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Eye, EyeSlash, X, CheckCircle } from "@phosphor-icons/react";
+import { authApi } from "../utils/api";
 
 export default function PengaturanProfilPage() {
   // State buat buka tutup modal ganti password
   const [isModalOpen, setIsModalOpen] = useState(false);
-  
   // State buat nampilin status sukses ganti password
   const [isSuccess, setIsSuccess] = useState(false);
+  const [showToast, setShowToast] = useState(false);
 
-  // State buat fitur show hide password di masing masing input
+  // State buat buka-tutup mata password
   const [showOldPassword, setShowOldPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [showToast, setShowToast] = useState(false);
+
+  // State buat nampung isian input password
+  const [oldPasswordInput, setOldPasswordInput] = useState("");
+  const [newPasswordInput, setNewPasswordInput] = useState("");
+  const [confirmPasswordInput, setConfirmPasswordInput] = useState("");
+  
+  const [isLoading, setIsLoading] = useState(true);
+  const [profileData, setProfileData] = useState({
+    fullName: "",
+    email: "",
+    phone: "",
+    dateOfBirth: "12/03/1995", // Statis dulu karena belum disediain di endpoint GET /profile
+  });
+  
+  // Fungsi narik data profil
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        // Nembak GET /profile ke auth-service (port 8000)
+        const response = await authApi.get("/profile");
+        const user = response.data.data.user;
+
+        // Masukin data balikan dari backend ke state
+        setProfileData({
+          fullName: user.full_name,
+          email: user.email,
+          phone: user.phone,
+          dateOfBirth: "12/03/1995", 
+        });
+      } catch (error) {
+        console.error("Gagal narik data profil:", error);
+        // Kalau error 401 (belum login) biasanya nanti diredirect ke /login
+      } finally {
+        setIsLoading(false); // Matiin status loading
+      }
+    };
+
+    fetchProfile();
+  }, []);
 
   // Fungsi buat nutup modal dan ngereset status suksesnya
   const handleCloseModal = () => {
     setIsModalOpen(false);
-    // Dikasih delay dikit biar pas modal ketutup animasi transisinya tetep mulus
-    setTimeout(() => setIsSuccess(false), 300);
-  };
-  
-  // Fungsi buat nampilin toast pas tombol "Simpan Perubahan" diklik
-  const handleSaveProfile = () => {
-    setShowToast(true);
-    // Otomatis ngilang lagi setelah 3 detik
     setTimeout(() => {
-      setShowToast(false);
-    }, 3000);
+      setIsSuccess(false);
+      setOldPasswordInput("");
+      setNewPasswordInput("");
+      setConfirmPasswordInput("");
+    }, 300); // delay
+  };
+
+  // Fungsi buat nampilin toast pas tombol "Simpan Perubahan" diklik
+  const handleSaveProfile = async () => {
+    try {
+      // Nembak API PATCH /profile 
+      await authApi.patch("/profile", {
+        full_name: profileData.fullName,
+      });
+      
+      // Kalau sukses, tampilin toast
+      setShowToast(true);
+      setTimeout(() => {
+        setShowToast(false);
+      }, 3000);
+    } catch (error) {
+      console.error("Gagal update profil:", error);
+      alert("Gagal menyimpan perubahan. Coba lagi brok!");
+    }
+  };
+
+  // Fungsi Ganti Password
+  const handleChangePassword = async () => {
+    // Validasi basic di frontend dulu
+    if (newPasswordInput !== confirmPasswordInput) {
+      alert("Sandi baru dan konfirmasi sandi nggak sama brok!");
+      return;
+    }
+
+    try {
+      // Nembak API PATCH /profile/password
+      await authApi.patch("/profile/password", {
+        current_password: oldPasswordInput,
+        new_password: newPasswordInput,
+        new_password_confirmation: confirmPasswordInput,
+      });
+
+      // Kalau sukses, langsung ubah tampilan ke mode sukses
+      setIsSuccess(true);
+    } catch (error) {
+      console.error("Gagal ganti password:", error);
+      alert("Gagal ganti sandi! Pastikan sandi lama benar dan sandi baru minimal 8 karakter (huruf+angka).");
+    }
+  };
+
+  // Tampilan pas lagi nunggu data API
+  if (isLoading) {
+    return (
+      <div className="w-full min-h-screen flex justify-center items-center bg-[#FAFAFA]">
+        <span className="text-[#1b2a4e] font-bold">Sedang memuat data profil...</span>
+      </div>
+    );
   };
 
   return (
@@ -53,13 +139,15 @@ export default function PengaturanProfilPage() {
           {/* Kolom kiri bagian foto profil */}
           <div className="flex flex-col items-center shrink-0">
             <div className="w-[140px] h-[140px] rounded-full overflow-hidden mb-4 bg-blue-100 border-4 border-white shadow-md">
-              <img 
-                src="https://ui-avatars.com/api/?name=Kartika+Wulandari&background=1b2a4e&color=fff&size=140" 
+              <img // Sementara pake nama dari state buat dummy fotonya
+                src={`https://ui-avatars.com/api/?name=${profileData.fullName.replace(" ", "+")}&background=1b2a4e&color=fff&size=140`}
                 alt="Avatar" 
                 className="w-full h-full object-cover"
               />
             </div>
-            <h3 className="text-[#1b2a4e] font-bold text-[18px] mb-1">Kartika Wulandari</h3>
+           <h3 className="text-[#1b2a4e] font-bold text-[18px] mb-1 w-full max-w-[200px] text-center break-words">
+            {profileData.fullName || "User"}
+            </h3>
             <button className="text-[#F5B301] text-[13px] font-bold hover:text-[#dda101] transition-colors">
               Edit Foto
             </button>
@@ -73,7 +161,9 @@ export default function PengaturanProfilPage() {
               <label className="text-[14px] font-bold text-[#1b2a4e]">Nama Lengkap</label>
               <input 
                 type="text" 
-                defaultValue="Kartika Wulandari"
+                value={profileData.fullName}
+                maxLength={100} // Kunci maksimal 100 karakter sesuai API backend
+                onChange={(e) => setProfileData({ ...profileData, fullName: e.target.value })}
                 className="w-full p-4 border border-gray-200 rounded-xl outline-none focus:border-[#F5B301] transition-colors text-[14px]"
               />
             </div>
@@ -83,7 +173,7 @@ export default function PengaturanProfilPage() {
               <label className="text-[14px] font-bold text-[#1b2a4e]">Email</label>
               <input 
                 type="email" 
-                defaultValue="kartika.wulandari@email.com"
+                value={profileData.email}
                 disabled 
                 className="w-full p-4 border border-gray-200 bg-gray-100 text-gray-400 rounded-xl outline-none cursor-not-allowed text-[14px]"
               />
@@ -94,8 +184,9 @@ export default function PengaturanProfilPage() {
               <label className="text-[14px] font-bold text-[#1b2a4e]">Nomor Telepon</label>
               <input 
                 type="text" 
-                defaultValue="081234567890"
-                className="w-full p-4 border border-gray-200 rounded-xl outline-none focus:border-[#F5B301] transition-colors text-[14px]"
+                value={profileData.phone}
+                disabled
+                className="w-full p-4 border border-gray-200 bg-gray-100 text-gray-400 rounded-xl outline-none cursor-not-allowed text-[14px]"
               />
             </div>
 
@@ -104,8 +195,9 @@ export default function PengaturanProfilPage() {
               <label className="text-[14px] font-bold text-[#1b2a4e]">Tanggal Lahir</label>
               <input 
                 type="text" 
-                defaultValue="12/03/1995"
-                className="w-full p-4 border border-gray-200 rounded-xl outline-none focus:border-[#F5B301] transition-colors text-[14px]"
+                value={profileData.dateOfBirth}
+                disabled // disamain tunggu BE ada datanya
+                className="w-full p-4 border border-gray-200 bg-gray-100 text-gray-400 rounded-xl outline-none cursor-not-allowed text-[14px]"
               />
             </div>
 
@@ -124,10 +216,8 @@ export default function PengaturanProfilPage() {
                 Simpan Perubahan
               </button>
             </div>
-
           </div>
         </div>
-
       </div>
 
       {/* Komponen Toast Notifikasi Melayang */}
