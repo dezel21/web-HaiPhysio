@@ -11,7 +11,7 @@ export default function Navbar() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   // STATE BARU BUAT BUKA TUTUP DROPDOWN PROFIL
   const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
-  // NOTE BROK: Gua set true sementara biar lu bisa ngetes dropdown-nya
+  // set true sementara biar bisa ngetes dropdown-nya
   const [isLoggedIn, setIsLoggedIn] = useState(true); 
   const appointmentHref = isLoggedIn ? "/booking" : "/login";
 

@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Eye, EyeSlash, X, CheckCircle } from "@phosphor-icons/react";
+import { Eye, EyeSlash, X, CheckCircle, SignOut } from "@phosphor-icons/react";
 import { authApi } from "../utils/api";
 
 export default function PengaturanProfilPage() {
@@ -10,12 +10,13 @@ export default function PengaturanProfilPage() {
   // State buat nampilin status sukses ganti password
   const [isSuccess, setIsSuccess] = useState(false);
   const [showToast, setShowToast] = useState(false);
-
+  // State baru buat modal konfirmasi logout
+  const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
   // State buat buka-tutup mata password
   const [showOldPassword, setShowOldPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-
   // State buat nampung isian input password
   const [oldPasswordInput, setOldPasswordInput] = useState("");
   const [newPasswordInput, setNewPasswordInput] = useState("");
@@ -81,7 +82,7 @@ export default function PengaturanProfilPage() {
       }, 3000);
     } catch (error) {
       console.error("Gagal update profil:", error);
-      alert("Gagal menyimpan perubahan. Coba lagi brok!");
+      alert("Gagal menyimpan perubahan. Coba lagi!");
     }
   };
 
@@ -89,7 +90,7 @@ export default function PengaturanProfilPage() {
   const handleChangePassword = async () => {
     // Validasi basic di frontend dulu
     if (newPasswordInput !== confirmPasswordInput) {
-      alert("Sandi baru dan konfirmasi sandi nggak sama brok!");
+      alert("Sandi baru dan konfirmasi sandi tidak sama!");
       return;
     }
 
@@ -106,6 +107,21 @@ export default function PengaturanProfilPage() {
     } catch (error) {
       console.error("Gagal ganti password:", error);
       alert("Gagal ganti sandi! Pastikan sandi lama benar dan sandi baru minimal 8 karakter (huruf+angka).");
+    }
+  };
+
+  // Fungsi buat eksekusi logout ke API
+  const handleLogout = async () => {
+    try {
+      // Nembak API logout sesuai dokumen Ragas
+      await authApi.post("/logout");
+      // Kalau sukses, lempar user ke halaman login (atau beranda)
+      window.location.href = "/login";
+    } catch (error) {
+      console.error("Gagal logout:", error);
+      alert("Gagal keluar akun, coba lagi nanti!");
+    } finally {
+      setIsLoggingOut(false); // Matiin loading kalau udah kelar (sukses/gagal)
     }
   };
 
@@ -201,7 +217,22 @@ export default function PengaturanProfilPage() {
               />
             </div>
 
-            {/* Kumpulan tombol aksi di bawah form */}
+            {/* BANNER LOGOUT */}
+            <div className="mt-2 p-5 border border-red-200 bg-[#FEF2F2] rounded-xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+              <div className="flex flex-col">
+                <span className="text-[#DC2626] font-bold text-[15px]">Keluar dari Akun</span>
+                <span className="text-[#EF4444] text-[13px]">Keluar dari akun kamu saat ini.</span>
+              </div>
+              <button 
+                onClick={() => setIsLogoutModalOpen(true)}
+                className="flex items-center gap-2 bg-[#EF4444] hover:bg-[#DC2626] text-white px-5 py-2.5 rounded-lg font-medium text-[14px] transition-colors"
+              >
+                Keluar Akun
+                <SignOut size={18} weight="bold" />
+              </button>
+            </div>
+
+            {/* Tombol simpan & ganti password */}
             <div className="flex flex-col md:flex-row gap-4 mt-4">
               <button 
                 onClick={() => setIsModalOpen(true)}
@@ -228,10 +259,36 @@ export default function PengaturanProfilPage() {
         </div>
       )}
 
+      {/* MODAL KONFIRMASI LOGOUT */}
+      {isLogoutModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-5 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white w-full max-w-[400px] rounded-[20px] p-8 text-center relative shadow-2xl animate-in zoom-in-95 duration-200">
+            <h3 className="text-[20px] font-bold text-[#1b2a4e] mb-2">Keluar Akun?</h3>
+            <p className="text-[14px] text-gray-500 mb-8">Sesi kamu akan diakhiri.</p>
+            
+            <div className="flex gap-4">
+              <button 
+                onClick={() => setIsLogoutModalOpen(false)}
+                className="flex-1 py-3 rounded-xl border border-gray-200 text-[#F5B301] font-bold text-[15px] hover:bg-gray-50 transition-colors"
+              >
+                Batal
+              </button>
+              <button 
+                onClick={handleLogout}
+                disabled={isLoggingOut} // Tombol mati pas lagi loading
+                className={`flex-1 py-3 rounded-xl text-white font-bold text-[15px] transition-colors ${isLoggingOut ? 'bg-gray-400 cursor-not-allowed' : 'bg-[#EF4444] hover:bg-[#DC2626]'}`}
+              >
+                {isLoggingOut ? "Keluar..." : "Keluar"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Pop up modal ganti password */}
       {isModalOpen && (
         // Overlay hitam transparan di belakang modal
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-5 backdrop-blur-sm animate-in fade-in duration-200">
+        <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 px-5 backdrop-blur-sm animate-in fade-in duration-200">
           
           {/* Kotak putih modalnya */}
           <div className="bg-white w-full max-w-[500px] rounded-[24px] p-8 md:p-10 relative shadow-2xl animate-in zoom-in-95 duration-200">
