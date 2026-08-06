@@ -4,12 +4,15 @@ import Link from "next/link";
 import Image from "next/image";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
-import { List, X, UserCircle } from "@phosphor-icons/react";
+import { List, X, UserCircle, ClockCounterClockwise } from "@phosphor-icons/react";
 
 export default function Navbar() {
   const pathname = usePathname();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  // STATE BARU BUAT BUKA TUTUP DROPDOWN PROFIL
+  const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
+  // NOTE BROK: Gua set true sementara biar lu bisa ngetes dropdown-nya
+  const [isLoggedIn, setIsLoggedIn] = useState(true); 
   const appointmentHref = isLoggedIn ? "/booking" : "/login";
 
   const navItems = [
@@ -47,18 +50,45 @@ export default function Navbar() {
 
       {/* TOMBOL CTA / PROFIL DESKTOP */}
       <div className="hidden lg:flex items-center gap-4">
-        {isLoggedIn ? (
-          <div className="flex items-center gap-3 cursor-pointer p-2 hover:bg-gray-50 rounded-lg transition-colors">
-            <div className="flex flex-col items-end">
-              <span className="text-[#1b2a4e] text-[14px] font-bold leading-tight">Halo, Fathir</span>
-              <span className="text-[#585858] text-[12px]">Pasien</span>
+        
+        {/* Tombol Buat Janji Temu sekarang selalu ada di luar pengecekan login */}
+        <Link href={appointmentHref} className="flex items-center justify-center px-6 h-[48px] bg-[#F5B301] hover:bg-[#dda101] text-white font-medium text-[16px] rounded-md transition-colors">
+          Buat Janji Temu
+        </Link>
+
+        {isLoggedIn && (
+          <div className="relative">
+            {/* Area Profil yang bisa diklik */}
+            <div 
+              onClick={() => setIsProfileDropdownOpen(!isProfileDropdownOpen)}
+              className="flex items-center justify-center cursor-pointer p-1 hover:bg-gray-50 rounded-full transition-colors border border-transparent hover:border-gray-200"
+            >
+              {/* Cuma nyisain Icon PP-nya aja */}
+              <UserCircle size={40} weight="light" color="#1b2a4e" />
             </div>
-            <UserCircle size={40} weight="light" color="#1b2a4e" />
+
+            {isProfileDropdownOpen && (
+              <div className="absolute right-0 mt-3 w-[220px] bg-white border border-gray-100 rounded-[12px] shadow-[0_8px_24px_rgba(0,0,0,0.12)] py-2 flex flex-col z-50 animate-in fade-in slide-in-from-top-2 duration-200">
+                <Link 
+                  href="/profil" 
+                  onClick={() => setIsProfileDropdownOpen(false)}
+                  className="group flex items-center gap-3 px-4 py-3 text-[#1b2a4e] text-[14px] font-medium transition-colors hover:bg-[#FFFBEA] hover:text-[#F5B301]"
+                >
+                  <UserCircle size={20} className="text-gray-400 group-hover:text-[#F5B301] transition-colors" />
+                  Pengaturan Profil
+                </Link>
+                <div className="w-full h-[1px] bg-gray-100 my-1"></div>
+                <Link 
+                  href="/profil?tab=riwayat" 
+                  onClick={() => setIsProfileDropdownOpen(false)}
+                  className="group flex items-center gap-3 px-4 py-3 text-[#1b2a4e] text-[14px] font-medium transition-colors hover:bg-[#FFFBEA] hover:text-[#F5B301]"
+                >
+                  <ClockCounterClockwise size={20} className="text-gray-400 group-hover:text-[#F5B301] transition-colors" />
+                  Riwayat Booking
+                </Link>
+              </div>
+            )}
           </div>
-        ) : (
-          <Link href={appointmentHref} className="flex items-center justify-center w-[224px] h-[48px] bg-[#F5B301] hover:bg-[#dda101] text-white font-medium text-[16px] rounded-md transition-colors">
-            Buat Janji Temu
-          </Link>
         )}
       </div>
 
@@ -69,29 +99,45 @@ export default function Navbar() {
 
       {/* DROPDOWN MOBILE MENU */}
       {isMobileMenuOpen && (
-        <div className="absolute top-[83px] left-0 w-full bg-white shadow-lg lg:hidden flex flex-col px-5 py-6 gap-4 border-t border-gray-100">
-          {navItems.map((item) => {
-            const isActive = pathname === item.path;
-            return (
-              <Link key={item.path} href={item.path} onClick={() => setIsMobileMenuOpen(false)}
-                className={`text-[16px] py-2 border-b border-gray-50 ${isActive ? "font-bold text-[#D69A00]" : "font-medium text-[#D69A00]"}`}
-              >
-                {item.label}
-              </Link>
-            );
-          })}
+        <div className="absolute top-[83px] left-0 w-full bg-white shadow-lg lg:hidden flex flex-col px-5 py-6 border-t border-gray-100">
+          
+          <div className="flex flex-col gap-4 mb-4">
+            {navItems.map((item) => {
+              const isActive = pathname === item.path;
+              return (
+                <Link key={item.path} href={item.path} onClick={() => setIsMobileMenuOpen(false)}
+                  className={`text-[16px] py-2 border-b border-gray-50 ${isActive ? "font-bold text-[#D69A00]" : "font-medium text-[#D69A00]"}`}
+                >
+                  {item.label}
+                </Link>
+              );
+            })}
+          </div>
 
           {isLoggedIn ? (
-            <div className="flex items-center gap-3 mt-2 p-3 bg-gray-50 rounded-md border border-gray-100">
-              <UserCircle size={40} weight="light" color="#1b2a4e" />
-              <div className="flex flex-col">
-                <span className="text-[#1b2a4e] text-[15px] font-bold leading-tight">Halo, Fathir</span>
-                <span className="text-[#585858] text-[13px]">Pasien</span>
+            <div className="flex flex-col mt-2 border-t border-gray-100 pt-4">
+              <div className="flex items-center gap-3 mb-4 p-3 bg-gray-50 rounded-md border border-gray-100">
+                <UserCircle size={40} weight="light" color="#1b2a4e" />
+                <span className="text-[#1b2a4e] text-[15px] font-bold leading-tight">Akun Saya</span>
               </div>
+              
+              {/* Menu Profil Tambahan Khusus Tampilan Mobile */}
+              <Link href="/profil" onClick={() => setIsMobileMenuOpen(false)} className="text-[16px] py-3 border-b border-gray-50 font-medium text-[#1b2a4e] flex items-center gap-3">
+                <UserCircle size={20} className="text-gray-400" /> Pengaturan Profil
+              </Link>
+              <Link href="/profil?tab=riwayat" onClick={() => setIsMobileMenuOpen(false)} className="text-[16px] py-3 border-b border-gray-50 font-medium text-[#1b2a4e] flex items-center gap-3">
+                <ClockCounterClockwise size={20} className="text-gray-400" /> Riwayat Booking
+              </Link>
+              
+              <Link href={appointmentHref} onClick={() => setIsMobileMenuOpen(false)}
+                className="w-full h-[48px] flex items-center justify-center bg-[#F5B301] hover:bg-[#dda101] text-white font-medium text-[16px] rounded-md mt-6"
+              >
+                Buat Janji Temu
+              </Link>
             </div>
           ) : (
             <Link href={appointmentHref} onClick={() => setIsMobileMenuOpen(false)}
-              className="w-full h-[48px] flex items-center justify-center bg-[#F5B301] hover:bg-[#dda101] text-white font-medium text-[16px] rounded-md mt-4"
+              className="w-full h-[48px] flex items-center justify-center bg-[#F5B301] hover:bg-[#dda101] text-white font-medium text-[16px] rounded-md mt-2"
             >
               Buat Janji Temu
             </Link>
