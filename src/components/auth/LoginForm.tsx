@@ -5,6 +5,7 @@ import { useState } from "react";
 import AuthButton from "./AuthButton";
 import AuthInput from "./AuthInput";
 import AuthPasswordInput from "./AuthPasswordInput";
+import { authApi } from "../../app/utils/api";
 
 type LoginErrors = {
   email?: string;
@@ -17,6 +18,7 @@ export default function LoginForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [errors, setErrors] = useState<LoginErrors>({});
+  const [isLoading, setIsLoading] = useState(false);
 
   function validate() {
     const nextErrors: LoginErrors = {};
@@ -36,23 +38,56 @@ export default function LoginForm() {
     return nextErrors;
   }
 
+  // Bikin fungsi submitnya jadi async
+  const handleLogin = async (event: React.FormEvent) => {
+    event.preventDefault();
+    const validationErrors = validate();
+
+    if (Object.keys(validationErrors).length > 0) {
+      setErrors(validationErrors);
+      return;
+    }
+
+    // Bersihin error sebelumnya dan nyalain mode loading
+    setErrors({});
+    setIsLoading(true);
+
+    try {
+      // Nembak API Login
+      await authApi.post("/login", {
+        email: email,
+        password: password,
+      });
+
+      // Kalau sukses dapet cookie dari backend, langsung lempar ke halaman profil
+      window.location.href = "/profil";
+      
+    } catch (error: any) {
+      console.error("Gagal login:", error);
+      
+      // Tangkep pesan error dari backend
+      const status = error.response?.status;
+      
+      if (status === 401) {
+        setErrors({ password: "Email atau kata sandi salah. Silakan cek kembali." });
+      } else if (status === 403) {
+        setErrors({ email: "Akun ini terdaftar sebagai admin. Silakan masuk lewat halaman admin." });
+      } else if (status === 429) {
+        setErrors({ email: "Terlalu banyak percobaan. Tunggu sebentar lalu coba lagi." });
+      } else {
+        setErrors({ password: "Terjadi kesalahan sistem. Coba lagi nanti!" });
+      }
+    } finally {
+      // Matiin loading kalau proses udah kelar (baik sukses maupun gagal)
+      setIsLoading(false);
+    }
+  };
+
   return (
     <form
       className="space-y-5"
       noValidate
-      onSubmit={(event) => {
-        event.preventDefault();
-        const validationErrors = validate();
-
-        if (Object.keys(validationErrors).length > 0) {
-          setErrors(validationErrors);
-          return;
-        }
-
-        setErrors({
-          password: "Kata sandi yang Anda masukkan salah. Silakan cek kembali.",
-        });
-      }}
+      onSubmit={handleLogin}
     >
       <AuthInput
         label="Email"
@@ -79,7 +114,11 @@ export default function LoginForm() {
       >
         Lupa kata sandi?
       </Link>
-      <AuthButton>Masuk</AuthButton>
+      
+      {/* Oper prop disabled sama ubah teksnya kalau lagi loading */}
+      <AuthButton disabled={isLoading}>
+        {isLoading ? "Masuk..." : "Masuk"}
+      </AuthButton>
     </form>
   );
 }

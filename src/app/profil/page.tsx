@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { Eye, EyeSlash, X, CheckCircle, SignOut } from "@phosphor-icons/react";
 import { authApi } from "../utils/api";
+import axios from 'axios';
 
 export default function PengaturanProfilPage() {
   // State buat buka tutup modal ganti password
@@ -13,16 +14,22 @@ export default function PengaturanProfilPage() {
   // State baru buat modal konfirmasi logout
   const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  
   // State buat buka-tutup mata password
   const [showOldPassword, setShowOldPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  // State buat nampung isian input password
-  const [oldPasswordInput, setOldPasswordInput] = useState("");
-  const [newPasswordInput, setNewPasswordInput] = useState("");
-  const [confirmPasswordInput, setConfirmPasswordInput] = useState("");
   
+  // State buat nangkep inputan teks ganti password (sudah dirapihkan)
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [newPasswordConfirmation, setNewPasswordConfirmation] = useState("");
+  
+  // State buat loading utama & loading khusus modal password
   const [isLoading, setIsLoading] = useState(true);
+  const [isPasswordLoading, setIsPasswordLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
+
   const [profileData, setProfileData] = useState({
     fullName: "",
     email: "",
@@ -34,11 +41,9 @@ export default function PengaturanProfilPage() {
   useEffect(() => {
     const fetchProfile = async () => {
       try {
-        // Nembak GET /profile ke auth-service (port 8000)
         const response = await authApi.get("/profile");
         const user = response.data.data.user;
 
-        // Masukin data balikan dari backend ke state
         setProfileData({
           fullName: user.full_name,
           email: user.email,
@@ -47,35 +52,33 @@ export default function PengaturanProfilPage() {
         });
       } catch (error) {
         console.error("Gagal narik data profil:", error);
-        // Kalau error 401 (belum login) biasanya nanti diredirect ke /login
       } finally {
-        setIsLoading(false); // Matiin status loading
+        setIsLoading(false); 
       }
     };
 
     fetchProfile();
   }, []);
 
-  // Fungsi buat nutup modal dan ngereset status suksesnya
+  // Fungsi buat nutup modal dan ngereset form
   const handleCloseModal = () => {
     setIsModalOpen(false);
     setTimeout(() => {
       setIsSuccess(false);
-      setOldPasswordInput("");
-      setNewPasswordInput("");
-      setConfirmPasswordInput("");
-    }, 300); // delay
+      setCurrentPassword("");
+      setNewPassword("");
+      setNewPasswordConfirmation("");
+      setErrorMessage("");
+    }, 300);
   };
 
-  // Fungsi buat nampilin toast pas tombol "Simpan Perubahan" diklik
+  // Fungsi buat simpan profil
   const handleSaveProfile = async () => {
     try {
-      // Nembak API PATCH /profile 
       await authApi.patch("/profile", {
         full_name: profileData.fullName,
       });
       
-      // Kalau sukses, tampilin toast
       setShowToast(true);
       setTimeout(() => {
         setShowToast(false);
@@ -86,42 +89,57 @@ export default function PengaturanProfilPage() {
     }
   };
 
-  // Fungsi Ganti Password
-  const handleChangePassword = async () => {
-    // Validasi basic di frontend dulu
-    if (newPasswordInput !== confirmPasswordInput) {
-      alert("Sandi baru dan konfirmasi sandi tidak sama!");
+  // Fungsi buat nembak API ganti password yang bener
+  const handleSubmitPassword = async () => {
+    setErrorMessage("");
+
+    if (newPassword !== newPasswordConfirmation) {
+      setErrorMessage("Konfirmasi kata sandi baru tidak sama!");
       return;
     }
 
+    setIsPasswordLoading(true);
     try {
-      // Nembak API PATCH /profile/password
-      await authApi.patch("/profile/password", {
-        current_password: oldPasswordInput,
-        new_password: newPasswordInput,
-        new_password_confirmation: confirmPasswordInput,
-      });
+      const response = await axios.patch(
+        "http://localhost:8000/api/v1/auth/profile/password",
+        {
+          current_password: currentPassword,
+          new_password: newPassword,
+          new_password_confirmation: newPasswordConfirmation
+        },
+        { 
+          withCredentials: true 
+        }
+      );
 
-      // Kalau sukses, langsung ubah tampilan ke mode sukses
-      setIsSuccess(true);
-    } catch (error) {
-      console.error("Gagal ganti password:", error);
-      alert("Gagal ganti sandi! Pastikan sandi lama benar dan sandi baru minimal 8 karakter (huruf+angka).");
+      if (response.data.success) {
+        setIsSuccess(true);
+        setCurrentPassword("");
+        setNewPassword("");
+        setNewPasswordConfirmation("");
+      }
+    } catch (error: any) {
+      if (error.response && error.response.data && error.response.data.error) {
+        setErrorMessage(error.response.data.error.message);
+      } else {
+        setErrorMessage("Terjadi kesalahan sistem. Coba lagi nanti.");
+      }
+    } finally {
+      setIsPasswordLoading(false);
     }
   };
 
   // Fungsi buat eksekusi logout ke API
   const handleLogout = async () => {
+    setIsLoggingOut(true);
     try {
-      // Nembak API logout sesuai dokumen Ragas
       await authApi.post("/logout");
-      // Kalau sukses, lempar user ke halaman login (atau beranda)
       window.location.href = "/login";
     } catch (error) {
       console.error("Gagal logout:", error);
       alert("Gagal keluar akun, coba lagi nanti!");
     } finally {
-      setIsLoggingOut(false); // Matiin loading kalau udah kelar (sukses/gagal)
+      setIsLoggingOut(false);
     }
   };
 
@@ -132,16 +150,13 @@ export default function PengaturanProfilPage() {
         <span className="text-[#1b2a4e] font-bold">Sedang memuat data profil...</span>
       </div>
     );
-  };
+  }
 
   return (
-    // Pembungkus utama halaman profil
     <div className="w-full min-h-screen pt-[120px] pb-24 px-5 md:px-[80px] bg-[#FAFAFA] flex justify-center">
       
-      {/* Kanvas putih utama info akun */}
       <div className="w-full max-w-[900px] bg-white rounded-[32px] p-8 md:p-12 shadow-[0_8px_40px_rgba(0,0,0,0.04)] h-fit">
         
-        {/* Bagian judul dan deskripsi atas */}
         <div className="text-center mb-10">
           <h1 className="text-[28px] md:text-[32px] font-bold text-[#1b2a4e] mb-3">Pengaturan Profil</h1>
           <p className="text-[#585858] text-[14px] md:text-[15px]">
@@ -149,13 +164,11 @@ export default function PengaturanProfilPage() {
           </p>
         </div>
 
-        {/* Layout dua kolom buat avatar dan form */}
         <div className="flex flex-col md:flex-row gap-10 md:gap-16">
           
-          {/* Kolom kiri bagian foto profil */}
           <div className="flex flex-col items-center shrink-0">
             <div className="w-[140px] h-[140px] rounded-full overflow-hidden mb-4 bg-blue-100 border-4 border-white shadow-md">
-              <img // Sementara pake nama dari state buat dummy fotonya
+              <img 
                 src={`https://ui-avatars.com/api/?name=${profileData.fullName.replace(" ", "+")}&background=1b2a4e&color=fff&size=140`}
                 alt="Avatar" 
                 className="w-full h-full object-cover"
@@ -169,22 +182,19 @@ export default function PengaturanProfilPage() {
             </button>
           </div>
 
-          {/* Kolom kanan bagian form input data diri */}
           <div className="flex-1 flex flex-col gap-5">
             
-            {/* Input nama lengkap */}
             <div className="flex flex-col gap-2">
               <label className="text-[14px] font-bold text-[#1b2a4e]">Nama Lengkap</label>
               <input 
                 type="text" 
                 value={profileData.fullName}
-                maxLength={100} // Kunci maksimal 100 karakter sesuai API backend
+                maxLength={100}
                 onChange={(e) => setProfileData({ ...profileData, fullName: e.target.value })}
                 className="w-full p-4 border border-gray-200 rounded-xl outline-none focus:border-[#F5B301] transition-colors text-[14px]"
               />
             </div>
 
-            {/* Input email yang sengaja dimatikan aksesnya */}
             <div className="flex flex-col gap-2">
               <label className="text-[14px] font-bold text-[#1b2a4e]">Email</label>
               <input 
@@ -195,7 +205,6 @@ export default function PengaturanProfilPage() {
               />
             </div>
 
-            {/* Input nomor telepon */}
             <div className="flex flex-col gap-2">
               <label className="text-[14px] font-bold text-[#1b2a4e]">Nomor Telepon</label>
               <input 
@@ -206,18 +215,16 @@ export default function PengaturanProfilPage() {
               />
             </div>
 
-            {/* Input tanggal lahir */}
             <div className="flex flex-col gap-2">
               <label className="text-[14px] font-bold text-[#1b2a4e]">Tanggal Lahir</label>
               <input 
                 type="text" 
                 value={profileData.dateOfBirth}
-                disabled // disamain tunggu BE ada datanya
+                disabled 
                 className="w-full p-4 border border-gray-200 bg-gray-100 text-gray-400 rounded-xl outline-none cursor-not-allowed text-[14px]"
               />
             </div>
 
-            {/* BANNER LOGOUT */}
             <div className="mt-2 p-5 border border-red-200 bg-[#FEF2F2] rounded-xl flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
               <div className="flex flex-col">
                 <span className="text-[#DC2626] font-bold text-[15px]">Keluar dari Akun</span>
@@ -232,7 +239,6 @@ export default function PengaturanProfilPage() {
               </button>
             </div>
 
-            {/* Tombol simpan & ganti password */}
             <div className="flex flex-col md:flex-row gap-4 mt-4">
               <button 
                 onClick={() => setIsModalOpen(true)}
@@ -275,7 +281,7 @@ export default function PengaturanProfilPage() {
               </button>
               <button 
                 onClick={handleLogout}
-                disabled={isLoggingOut} // Tombol mati pas lagi loading
+                disabled={isLoggingOut}
                 className={`flex-1 py-3 rounded-xl text-white font-bold text-[15px] transition-colors ${isLoggingOut ? 'bg-gray-400 cursor-not-allowed' : 'bg-[#EF4444] hover:bg-[#DC2626]'}`}
               >
                 {isLoggingOut ? "Keluar..." : "Keluar"}
@@ -287,13 +293,10 @@ export default function PengaturanProfilPage() {
 
       {/* Pop up modal ganti password */}
       {isModalOpen && (
-        // Overlay hitam transparan di belakang modal
         <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/40 px-5 backdrop-blur-sm animate-in fade-in duration-200">
           
-          {/* Kotak putih modalnya */}
           <div className="bg-white w-full max-w-[500px] rounded-[24px] p-8 md:p-10 relative shadow-2xl animate-in zoom-in-95 duration-200">
             
-            {/* Tombol silang buat nutup modal di pojok kanan atas */}
             <button 
               onClick={handleCloseModal}
               className="absolute top-6 right-6 text-gray-400 hover:text-gray-600 transition-colors"
@@ -301,24 +304,30 @@ export default function PengaturanProfilPage() {
               <X size={24} weight="bold" />
             </button>
 
-            {/* Logika pergantian tampilan modal form vs modal sukses */}
             {!isSuccess ? (
-              // Tampilan form ganti password
               <div className="flex flex-col">
-                <div className="text-center mb-8">
+                <div className="text-center mb-6">
                   <h3 className="text-[20px] font-bold text-[#1b2a4e] mb-2">Buat Kata Sandi Baru</h3>
                   <p className="text-[13px] text-gray-500 leading-relaxed">
                     Pastikan kata sandi baru Anda berbeda dari sebelumnya dan tidak mudah ditebak.
                   </p>
                 </div>
 
+                {/* Tempat nampilin pesan error dari backend */}
+                {errorMessage && (
+                  <div className="mb-4 p-3 rounded-lg bg-red-50 text-red-500 text-[13px] font-medium border border-red-100 text-center">
+                    {errorMessage}
+                  </div>
+                )}
+
                 <div className="flex flex-col gap-5">
-                  {/* Input sandi lama */}
                   <div className="flex flex-col gap-2">
                     <label className="text-[14px] font-bold text-[#1b2a4e]">Kata Sandi Lama</label>
                     <div className="relative">
                       <input 
                         type={showOldPassword ? "text" : "password"} 
+                        value={currentPassword}
+                        onChange={(e) => setCurrentPassword(e.target.value)}
                         className="w-full p-3.5 pr-12 border border-gray-200 rounded-xl outline-none focus:border-[#F5B301] transition-colors text-[14px]"
                         placeholder="••••••••"
                       />
@@ -330,15 +339,15 @@ export default function PengaturanProfilPage() {
                         {showOldPassword ? <Eye size={20} /> : <EyeSlash size={20} />}
                       </button>
                     </div>
-                    <span className="text-[12px] text-gray-400">Gunakan minimal 8 karakter dengan kombinasi huruf dan angka.</span>
                   </div>
 
-                  {/* Input sandi baru */}
                   <div className="flex flex-col gap-2">
                     <label className="text-[14px] font-bold text-[#1b2a4e]">Kata Sandi Baru</label>
                     <div className="relative">
                       <input 
-                        type={showNewPassword ? "text" : "password"} 
+                        type={showNewPassword ? "text" : "password"}
+                        value={newPassword}
+                        onChange={(e) => setNewPassword(e.target.value)} 
                         className="w-full p-3.5 pr-12 border border-gray-200 rounded-xl outline-none focus:border-[#F5B301] transition-colors text-[14px]"
                         placeholder="••••••••"
                       />
@@ -353,12 +362,13 @@ export default function PengaturanProfilPage() {
                     <span className="text-[12px] text-gray-400">Gunakan minimal 8 karakter dengan kombinasi huruf dan angka.</span>
                   </div>
 
-                  {/* Input konfirmasi sandi baru */}
                   <div className="flex flex-col gap-2">
                     <label className="text-[14px] font-bold text-[#1b2a4e]">Konfirmasi Kata Sandi</label>
                     <div className="relative">
                       <input 
                         type={showConfirmPassword ? "text" : "password"} 
+                        value={newPasswordConfirmation}
+                        onChange={(e) => setNewPasswordConfirmation(e.target.value)}
                         className="w-full p-3.5 pr-12 border border-gray-200 rounded-xl outline-none focus:border-[#F5B301] transition-colors text-[14px]"
                         placeholder="••••••••"
                       />
@@ -370,27 +380,23 @@ export default function PengaturanProfilPage() {
                         {showConfirmPassword ? <Eye size={20} /> : <EyeSlash size={20} />}
                       </button>
                     </div>
-                    <span className="text-[12px] text-gray-400">Gunakan minimal 8 karakter dengan kombinasi huruf dan angka.</span>
                   </div>
                 </div>
 
-                {/* Teks link lupa kata sandi */}
                 <button className="text-left text-[#3b82f6] text-[13px] font-medium mt-3 mb-8 hover:underline w-fit">
                   Lupa kata sandi?
                 </button>
 
-                {/* Tombol submit form modal */}
                 <button 
-                  onClick={() => setIsSuccess(true)}
-                  className="w-full py-3.5 rounded-xl bg-[#F5B301] text-white font-bold text-[15px] hover:bg-[#dda101] transition-colors"
+                  onClick={handleSubmitPassword}
+                  disabled={isPasswordLoading}
+                  className={`w-full py-3.5 rounded-xl text-white font-bold text-[15px] transition-colors ${isPasswordLoading ? 'bg-gray-400 cursor-not-allowed' : 'bg-[#F5B301] hover:bg-[#dda101]'}`}
                 >
-                  Konfirmasi Kata Sandi Baru
+                  {isPasswordLoading ? 'Memproses...' : 'Konfirmasi Kata Sandi Baru'}
                 </button>
               </div>
             ) : (
-              // Tampilan state sukses ganti password
               <div className="flex flex-col items-center text-center animate-in zoom-in-95 duration-300 pt-4">
-                {/* Gambar ilustrasi sukses */}
                 <img 
                   src="/success-illustration.png" 
                   alt="Success" 
@@ -399,10 +405,9 @@ export default function PengaturanProfilPage() {
                 
                 <h3 className="text-[20px] font-bold text-[#F5B301] mb-2">Sandi Baru Anda Berhasil Disimpan!</h3>
                 <p className="text-[14px] text-gray-500 leading-relaxed mb-8">
-                  Sandi Anda sudah kami perbarui. Silakan login kembali dengan sandi baru Anda.
+                  Sandi Anda sudah kami perbarui. Sesi di perangkat lain telah otomatis keluar.
                 </p>
 
-                {/* Tombol kembali ke profil untuk nutup modal */}
                 <button 
                   onClick={handleCloseModal}
                   className="w-full py-3.5 rounded-xl bg-[#F5B301] text-white font-bold text-[15px] hover:bg-[#dda101] transition-colors"

@@ -6,6 +6,7 @@ import AuthButton from "./AuthButton";
 import AuthInput from "./AuthInput";
 import AuthPasswordInput from "./AuthPasswordInput";
 import AuthPolicyModal from "./AuthPolicyModal";
+import { authApi } from "../../app/utils/api";
 
 type RegisterErrors = {
   name?: string;
@@ -35,6 +36,9 @@ export default function RegisterForm() {
     confirmPassword: "",
   });
   const [errors, setErrors] = useState<RegisterErrors>({});
+
+  // State buat ngunci tombol pas lagi nembak API
+  const [isLoading, setIsLoading] = useState(false);
 
   function updateField(field: keyof typeof values, value: string) {
     setValues((current) => ({ ...current, [field]: value }));
@@ -80,37 +84,71 @@ export default function RegisterForm() {
     return nextErrors;
   }
 
+  const handleRegister = async (event: React.FormEvent) => {
+    event.preventDefault();
+    const validationErrors = validate();
+
+    if (Object.keys(validationErrors).length > 0) {
+      setErrors(validationErrors);
+      return;
+    }
+
+    setErrors({});
+    setIsLoading(true);
+
+    try {
+      // Nembak API Register dengan format key sesuai permintaan backend
+      await authApi.post("/register", {
+        fullName: values.name,
+        email: values.email,
+        phone: values.phone,
+        dateOfBirth: values.birthDate,
+        password: values.password,
+        passwordConfirmation: values.confirmPassword,
+        termsAgreement: agreed,
+      });
+
+      // Kalau sukses, cookie otomatis kesimpen, user dilempar ke profil
+      window.location.href = "/profil";
+
+    } catch (error: any) {
+      console.error("Gagal register:", error);
+      
+      const status = error.response?.status;
+      const errorCode = error.response?.data?.error?.code;
+
+      const systemErrors: RegisterErrors = {};
+
+      if (status === 409) {
+        // Handle konflik email atau nomor telepon
+        if (errorCode === "EMAIL_ALREADY_REGISTERED") {
+          systemErrors.email = duplicateMessage;
+        } else if (errorCode === "PHONE_ALREADY_REGISTERED") {
+          systemErrors.phone = duplicateMessage;
+        } else if (errorCode === "REGISTRATION_CONFLICT") {
+          systemErrors.email = duplicateMessage;
+          systemErrors.phone = duplicateMessage;
+        }
+      } else if (status === 429) {
+        alert("Terlalu banyak percobaan. Tunggu sebentar lalu coba lagi.");
+      } else {
+        alert("Terjadi kesalahan sistem saat mendaftar. Coba lagi nanti!");
+      }
+
+      if (Object.keys(systemErrors).length > 0) {
+        setErrors(systemErrors);
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <>
       <form
         className="space-y-4"
         noValidate
-        onSubmit={(event) => {
-          event.preventDefault();
-          const validationErrors = validate();
-
-          if (Object.keys(validationErrors).length > 0) {
-            setErrors(validationErrors);
-            return;
-          }
-
-          const systemErrors: RegisterErrors = {};
-          const normalizedEmail = values.email.trim().toLowerCase();
-          const normalizedPhone = values.phone.replace(/\D/g, "");
-          const normalizedRegisteredPhones = registeredPhones.map((phone) =>
-            phone.replace(/\D/g, ""),
-          );
-
-          if (registeredEmails.includes(normalizedEmail)) {
-            systemErrors.email = duplicateMessage;
-          }
-
-          if (normalizedRegisteredPhones.includes(normalizedPhone)) {
-            systemErrors.phone = duplicateMessage;
-          }
-
-          setErrors(systemErrors);
-        }}
+        onSubmit={handleRegister}
       >
         <AuthInput
           label="Nama Lengkap"
@@ -202,7 +240,10 @@ export default function RegisterForm() {
           </span>
         </label>
 
-        <AuthButton disabled={!agreed}>Buat Akun</AuthButton>
+        {/* Tombol dikunci kalau belum dicentang ATAU lagi loading */}
+        <AuthButton disabled={!agreed || isLoading}>
+          {isLoading ? "Membuat Akun..." : "Buat Akun"}
+        </AuthButton>
       </form>
 
       <AuthPolicyModal
