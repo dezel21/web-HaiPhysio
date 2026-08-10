@@ -125,7 +125,7 @@ export default function Navbar() {
               <Link href="/profil" onClick={() => setIsMobileMenuOpen(false)} className="text-[16px] py-3 border-b border-gray-50 font-medium text-[#1b2a4e] flex items-center gap-3">
                 <UserCircle size={20} className="text-gray-400" /> Pengaturan Profil
               </Link>
-              <Link href="/profil?tab=riwayat" onClick={() => setIsMobileMenuOpen(false)} className="text-[16px] py-3 border-b border-gray-50 font-medium text-[#1b2a4e] flex items-center gap-3">
+              <Link href="/riwayat-booking" onClick={() => setIsMobileMenuOpen(false)} className="text-[16px] py-3 border-b border-gray-50 font-medium text-[#1b2a4e] flex items-center gap-3">
                 <ClockCounterClockwise size={20} className="text-gray-400" /> Riwayat Booking
               </Link>
               

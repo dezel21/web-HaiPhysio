@@ -2,9 +2,10 @@
 
 import { Copy, FileText, CheckCircle } from "@phosphor-icons/react";
 import Link from "next/link";
-import { useState } from "react";
+import { useState, use } from "react";
 
-export default function SuksesUbahJadwalPage({ params }: { params: { id: string } }) {
+export default function SuksesUbahJadwalPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = use(params);
   const [isCopied, setIsCopied] = useState(false);
   const nomorReservasi = "RESV - 456130";
 

@@ -126,7 +126,7 @@ export default function Step4Konfirmasi({ onBack, bookingData }: Step4Props) {
                     {/* --- TOMBOL AKSI ROUTING DINAMIS --- */}
                     <div className="flex flex-col gap-3 w-full mt-4">
                         <button
-                            onClick={() => router.push("/riwayat")}
+                            onClick={() => router.push("/riwayat-booking")}
                             className="w-full bg-[#F5B301] hover:bg-[#dda101] text-white py-4 rounded-[12px] font-bold transition-colors"
                         >
                             Lihat Detail Riwayat

@@ -145,3 +145,29 @@ export const dummyRiwayatBooking: RiwayatBooking[] = [
     alasanBatal: "Alasan: Jadwal terapis bertabrakan"
   }
 ];
+
+// 6. Data Mock Kalender & Terapis (Shared Data untuk Buat Janji Temu & Ubah Jadwal)
+export const mockTherapists = [
+  { id: "t1", name: "Ftr. Andi Pratama", sp: "Spesialis Neuro & Olahraga", rating: 4.8, patients: "90+", photo: "/dokter-andi-pratama.png" },
+  { id: "t2", name: "Ftr. Sari Wijaya, S.Ft", sp: "Spesialis Olahraga & Muskulo", rating: 4.9, patients: "150+", photo: "/dokter-sari-wijaya.png" },
+  { id: "t3", name: "Ftr. Bintang Dito", sp: "Spesialis Olahraga", rating: 4.8, patients: "70+", photo: "/dokter-bintang-dito.png" },
+];
+
+export const calendarDays = [
+  { name: "Senin", date: "07" }, { name: "Selasa", date: "08" }, { name: "Rabu", date: "09" },
+  { name: "Kamis", date: "10" }, { name: "Jumat", date: "11" }, { name: "Sabtu", date: "12" }, { name: "Minggu", date: "13" }
+];
+
+export const calendarHours = ["08:00", "09:00", "10:00", "11:00", "12:00", "13:00", "14:00", "15:00", "16:00", "17:00", "18:00", "19:00"];
+
+export const mockSlots = [
+  { id: "s1", date: "07", time: "09:00", therapistId: "t1", status: "tersedia" },
+  { id: "s2", date: "07", time: "09:00", therapistId: "t2", status: "tidak_praktik" },
+  { id: "s3", date: "07", time: "10:00", therapistId: "t1", status: "penuh" },
+  { id: "s4", date: "08", time: "10:00", therapistId: "t2", status: "tersedia" },
+  { id: "s5", date: "09", time: "11:00", therapistId: "t3", status: "tersedia" },
+  { id: "s6", date: "10", time: "14:00", therapistId: "t1", status: "penuh" },
+  { id: "s7", date: "11", time: "15:00", therapistId: "t2", status: "tersedia" },
+  { id: "s8", date: "12", time: "09:00", therapistId: "t3", status: "tidak_praktik" },
+  { id: "s9", date: "13", time: "13:00", therapistId: "t2", status: "tersedia" },
+];

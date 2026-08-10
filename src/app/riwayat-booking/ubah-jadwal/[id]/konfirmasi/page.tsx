@@ -2,15 +2,16 @@
 
 import { Calendar } from "@phosphor-icons/react";
 import Link from "next/link";
-import { useState } from "react";
+import { useState, use } from "react";
 
-export default function KonfirmasiUbahJadwalPage({ params }: { params: { id: string } }) {
+export default function KonfirmasiUbahJadwalPage({ params }: { params: Promise<{ id: string }> }) {
+    const { id } = use(params);
     const [isSubmitting, setIsSubmitting] = useState(false);
 
     const handleConfirm = () => {
         setIsSubmitting(true);
         setTimeout(() => {
-            window.location.href = `/riwayat-booking/ubah-jadwal/${params.id}/sukses`;
+            window.location.href = `/riwayat-booking/ubah-jadwal/${id}/sukses`;
         }, 1500);
     };
 
@@ -95,7 +96,7 @@ export default function KonfirmasiUbahJadwalPage({ params }: { params: { id: str
                 {/* Action Buttons */}
                 <div className="flex gap-4 mt-10">
                     <Link
-                        href={`/riwayat-booking/ubah-jadwal/${params.id}`}
+                        href={`/riwayat-booking/ubah-jadwal/${id}`}
                         className="flex-1 py-4 text-center rounded-xl bg-gray-50 border border-gray-200 text-[#F5B301] font-bold text-[15px] hover:bg-gray-100 transition-colors"
                     >
                         &larr; Kembali
