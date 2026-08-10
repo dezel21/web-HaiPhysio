@@ -79,7 +79,7 @@ export default function Navbar() {
                 </Link>
                 <div className="w-full h-[1px] bg-gray-100 my-1"></div>
                 <Link 
-                  href="/profil?tab=riwayat" 
+                  href="/riwayat-booking"
                   onClick={() => setIsProfileDropdownOpen(false)}
                   className="group flex items-center gap-3 px-4 py-3 text-[#1b2a4e] text-[14px] font-medium transition-colors hover:bg-[#FFFBEA] hover:text-[#F5B301]"
                 >

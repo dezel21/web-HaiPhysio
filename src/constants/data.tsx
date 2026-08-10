@@ -104,3 +104,44 @@ export const manfaatData = [
   { text: "Membantu Rehabilitasi Jantung & Paru", icon: <Heartbeat size={28} color="#1b2a4e" weight="fill" /> },
   { text: "Mengurangi Nyeri", icon: <HandHeart size={28} color="#1b2a4e" weight="fill" /> }
 ];
+
+// 5. Data Riwayat Booking untuk Halaman User
+export interface RiwayatBooking {
+  id: string;
+  layanan: string;
+  tanggal: string;
+  waktu: string;
+  terapis: string;
+  status: "Terkonfirmasi" | "Selesai" | "Dibatalkan";
+  keluhan?: string;
+  alasanBatal?: string;
+}
+
+export const dummyRiwayatBooking: RiwayatBooking[] = [
+  {
+    id: "BK-001",
+    layanan: "Fisioterapi Olahraga",
+    tanggal: "Jumat, 11 Juli 2026",
+    waktu: "11:00 - 12:00 WIB",
+    terapis: "Ftr. Sari Wijaya, S.Ft",
+    status: "Terkonfirmasi",
+    keluhan: "Paha bagian belakang terasa seperti ada yang robek dan bunyi 'pop' saat saya melakukan sprint lari kemarin. Sekarang sangat nyeri jika dipakai berjalan dan mulai muncul memar biru."
+  },
+  {
+    id: "BK-002",
+    layanan: "Fisioterapi Neuro",
+    tanggal: "Senin, 7 Juli 2026",
+    waktu: "14:00 - 15:00 WIB",
+    terapis: "Ftr. Andi Pratama, S.Ft", 
+    status: "Selesai"
+  },
+  {
+    id: "BK-003",
+    layanan: "Fisioterapi Muskuloskeletal",
+    tanggal: "Rabu, 02 Juli 2026",
+    waktu: "13:00 - 14:00 WIB",
+    terapis: "Ftr. Bintang Dito, S.Ft",
+    status: "Dibatalkan",
+    alasanBatal: "Alasan: Jadwal terapis bertabrakan"
+  }
+];
