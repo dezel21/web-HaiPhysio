@@ -1,184 +1,210 @@
 "use client";
 
-import { CaretLeft, CaretRight, Info, Check } from "@phosphor-icons/react";
-import { useState, use } from "react";
+import { useState, useEffect, use } from "react";
 import Link from "next/link";
-import { mockTherapists } from "@/constants/data";
+import { useRouter } from "next/navigation";
+import { bookingService } from "@/services/bookingService";
 import GridKalender from "@/components/shared/GridKalender";
+import { UserCircle } from "@phosphor-icons/react";
 
 export default function UbahJadwalPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
-  const [selectedTerapis, setSelectedTerapis] = useState<string[]>(mockTherapists.map(t => t.id));
+  const router = useRouter();
+
+  // State penyimpan data dari database
+  const [bookingData, setBookingData] = useState<any>(null);
+  const [therapists, setTherapists] = useState<any[]>([]);
+  const [slots, setSlots] = useState<any[]>([]);
+
+  // State untuk nyimpen pilihan dan inputan user
+  const [selectedTerapis, setSelectedTerapis] = useState<string[]>([]);
+  const [selectedSlot, setSelectedSlot] = useState<string | null>(null);
   const [alasan, setAlasan] = useState("");
   const [kirimNotif, setKirimNotif] = useState(true);
-  const [selectedSlot, setSelectedSlot] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
-  // Fungsi toggle terapis
-  const handleToggleTerapis = (id: string) => {
-    if (selectedTerapis.includes(id)) {
-      setSelectedTerapis(selectedTerapis.filter(t => t !== id));
+  // Proses narik data saat halaman pertama kali dibuka
+  useEffect(() => {
+    const fetchInitialData = async () => {
+      setIsLoading(true);
+      try {
+        // Ambil detail booking lama buat ngecek pasien ini milih layanan apa (misal Neuro)
+        const bookingRes = await bookingService.getDetailBooking(id);
+        const booking = bookingRes.data.booking;
+        setBookingData(booking);
+
+        const focusId = booking.therapistSpecializations?.[0]?.id;
+
+        if (focusId) {
+          // Tarik data terapis yang ahli di layanan tersebut
+          const therapistsRes = await bookingService.getTherapists(focusId);
+          const fetchedTherapists = therapistsRes.data.therapists;
+          setTherapists(fetchedTherapists);
+
+          // Centang semua terapis secara default
+          const therapistIds = fetchedTherapists.map((t: any) => t.id);
+          setSelectedTerapis(therapistIds);
+
+          // Tarik jadwal buat masing-masing terapis. Karena API nembak per terapis, 
+          // kita loop dan gabungin semua jadwalnya. (Asumsi narik jadwal minggu ini: 10 Agustus 2026)
+          const weekDate = "2026-08-10";
+          const slotsPromises = therapistIds.map((tId: string) =>
+            bookingService.getScheduleGrid(tId, weekDate)
+          );
+
+          const slotsResponses = await Promise.all(slotsPromises);
+
+          let allSlots: any[] = [];
+          slotsResponses.forEach((res) => {
+            if (res.data?.slots) {
+              allSlots = [...allSlots, ...res.data.slots];
+            }
+          });
+          setSlots(allSlots);
+        }
+      } catch (error) {
+        console.error("Gagal menarik data jadwal:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchInitialData();
+  }, [id]);
+
+  // Fungsi saat user mencentang/menghapus centang terapis
+  const handleToggleTerapis = (therapistId: string) => {
+    if (selectedTerapis.includes(therapistId)) {
+      setSelectedTerapis(selectedTerapis.filter(t => t !== therapistId));
     } else {
-      setSelectedTerapis([...selectedTerapis, id]);
+      setSelectedTerapis([...selectedTerapis, therapistId]);
     }
-    setSelectedSlot(null); // Reset jadwal kalau filter terapis diubah
+    setSelectedSlot(null); // Slot otomatis batal kalau filter terapis diubah
   };
-  
+
+  // Fungsi untuk memproses data saat tombol Lanjut ditekan
+  const handleLanjut = () => {
+    if (!selectedSlot) return;
+    
+    // Oper ID Slot dan alasan ke halaman konfirmasi lewat URL Params
+    const url = `/riwayat-booking/ubah-jadwal/${id}/konfirmasi?slotId=${selectedSlot}&reason=${encodeURIComponent(alasan)}`;
+    router.push(url);
+  };
+
+  // Tampilan layar memuat data
+  if (isLoading) {
+    return (
+      <div className="w-full min-h-screen pt-[120px] pb-24 flex justify-center items-center bg-[#FAFAFA]">
+        <span className="text-[#1b2a4e] font-bold animate-pulse">Menyiapkan jadwal pengganti...</span>
+      </div>
+    );
+  }
+
+  const namaLayanan = bookingData?.therapistSpecializations?.[0]?.name || "Fisioterapi";
+
   return (
-    <div className="w-full min-h-screen pt-[120px] pb-24 px-5 md:px-[80px] bg-[#FAFAFA] flex justify-center">
-      <div className="w-full max-w-[1000px] bg-white rounded-[32px] p-8 md:p-12 shadow-[0_8px_40px_rgba(0,0,0,0.04)] h-fit">
-        
-        {/* Header Title */}
-        <div className="text-center mb-10">
-          <h1 className="text-[28px] md:text-[32px] font-bold text-[#1b2a4e] mb-3">Ubah Jadwal Terapis</h1>
-          <p className="text-[#585858] text-[14px]">
-            Ubah jadwal kunjungan Anda. Anda juga bisa mengubah terapis Anda.
-          </p>
-        </div>
+    <div className="w-full min-h-screen pt-[120px] pb-24 px-5 md:px-[80px] bg-[#FAFAFA] flex flex-col items-center">
+      
+      {/* Kanvas Putih Utama */}
+      <div className="w-full max-w-[900px] bg-white rounded-[32px] p-8 md:p-12 shadow-sm border border-gray-100 h-fit">
 
-        {/* TOP SECTION: Kalender Mini & Filter Terapis (Sama persis kayak Step 2 Booking) */}
-        <div className="w-full flex flex-col lg:flex-row gap-6 mb-8">
-          
-          {/* --- UI KALENDER MINI --- */}
-          <div className="w-full md:w-[320px] bg-white border border-gray-200 rounded-[16px] p-6 h-fit shrink-0">
-            <div className="flex justify-between items-center mb-6">
-              <button className="text-gray-400 hover:text-[#1b2a4e] font-bold">&lt;</button>
-              <h4 className="font-bold text-[#1b2a4e] text-[16px]">July 2026</h4>
-              <button className="text-gray-400 hover:text-[#1b2a4e] font-bold">&gt;</button>
-            </div>
+        {/* Judul Halaman */}
+        <h1 className="text-[24px] md:text-[28px] font-bold text-[#1b2a4e] mb-2">Ubah Jadwal Terapis</h1>
+        <p className="text-gray-500 text-[14px] mb-8">Pilih jadwal baru untuk sesi {namaLayanan} Anda.</p>
+
+        {/* Bagian Filter Terapis */}
+        <div className="mb-8">
+          <h3 className="text-[15px] font-bold text-[#1b2a4e] mb-4">Pilih Terapis</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             
-            <div className="grid grid-cols-7 gap-y-4 text-center">
-              {["Min", "Sen", "Sel", "Rab", "Kam", "Jum", "Sab"].map((day, i) => (
-                <span key={i} className="text-[12px] font-medium text-gray-500">{day}</span>
-              ))}
-              {[
-                28, 29, 30, 1, 2, 3, 4,
-                5, 6, 7, 8, 9, 10, 11,
-                12, 13, 14, 15, 16, 17, 18,
-                19, 20, 21, 22, 23, 24, 25,
-                26, 27, 28, 29, 30, 31, 1, 2
-              ].map((date, i) => {
-                const isActiveWeek = date >= 7 && date <= 13 && i >= 7 && i <= 20; 
-                const isFaded = i < 3 || i > 33; 
-
-                return (
-                  <div key={i} className="flex justify-center items-center">
-                    <span className={`w-8 h-8 flex items-center justify-center rounded-full text-[14px]
-                      ${isActiveWeek ? "bg-[#FFFBEA] text-[#F5B301] font-bold" : isFaded ? "text-gray-300" : "text-[#1b2a4e]"}
-                    `}>
-                      {date}
-                    </span>
-                  </div>
-                )
-              })}
-            </div>
-          </div>
-
-          {/* --- FILTER TERAPIS & INFO LAYANAN --- */}
-          <div className="flex-1 flex flex-col gap-4">
-            <div className="w-full bg-white border border-gray-200 rounded-[16px] p-6">
-              <h4 className="font-bold text-[#1b2a4e] text-[16px] mb-1">Pilih Fisioterapis</h4>
-              <p className="text-[#585858] text-[13px] mb-4">Terapis yang ditampilkan hanya yang memegang layanan pilihan Anda</p>
+            {/* List Terapis Aktif */}
+            {therapists.map(therapist => {
+              const isChecked = selectedTerapis.includes(therapist.id);
               
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {/* Loop Terapis dari Data Terpusat mockTherapists */}
-                {mockTherapists.map(therapist => {
-                  const isChecked = selectedTerapis.includes(therapist.id);
+              return (
+                <div
+                  key={therapist.id}
+                  onClick={() => handleToggleTerapis(therapist.id)}
+                  className={`flex items-center gap-4 p-4 rounded-2xl border cursor-pointer transition-all ${
+                    isChecked ? "border-[#F5B301] bg-[#FFFBEA]" : "border-gray-200 bg-white hover:bg-gray-50"
+                  }`}
+                >
+                  {therapist.photoUrl ? (
+                    <img src={therapist.photoUrl} alt={therapist.fullName} className="w-12 h-12 rounded-full object-cover" />
+                  ) : (
+                    <UserCircle size={48} className="text-gray-300" weight="fill" />
+                  )}
                   
-                  return (
-                    <div 
-                      key={therapist.id} 
-                      onClick={() => handleToggleTerapis(therapist.id)}
-                      className={`flex items-center justify-between p-3 border rounded-xl cursor-pointer transition-colors
-                        ${isChecked ? "border-[#F5B301] bg-[#FFFBEA]" : "border-gray-100 hover:bg-gray-50"}
-                      `}
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className="w-[72px] h-[72px] rounded-full overflow-hidden border border-gray-200 shrink-0 bg-gray-50 shadow-sm">
-                          <img 
-                            src={therapist.photo} 
-                            alt={therapist.name} 
-                            className="w-full h-full object-cover"
-                            onError={(e) => { e.currentTarget.src = "https://ui-avatars.com/api/?name=" + therapist.name + "&background=F5B301&color=fff" }} 
-                          />
-                        </div>
-                        <div className="flex flex-col">
-                          <span className="text-[14px] font-bold text-[#1b2a4e]">{therapist.name}</span>
-                          <span className="text-[12px] text-gray-500">{therapist.sp}</span>
-                          <span className="text-[11px] text-[#F5B301] mt-0.5">⭐ {therapist.rating} ({therapist.patients} Pasien)</span>
-                        </div>
-                      </div>
-                      <input 
-                        type="checkbox" 
-                        className="w-5 h-5 accent-[#F5B301] pointer-events-none" 
-                        checked={isChecked}
-                        readOnly
-                      />
-                    </div>
-                  )
-                })}
-              </div>
-            </div>
-
-            <div className="w-full bg-[#F8FAFC] border border-[#E2E8F0] rounded-[12px] p-4 flex justify-between items-center">
-              <div className="flex items-center gap-3">
-                <div className="text-[#3B82F6]">🩺</div>
-                <span className="text-[14px] font-medium text-[#1b2a4e]">Layanan Terpilih: Fisioterapi Olahraga</span>
-              </div>
-              {/* Tombol Ubah bisa di-disable atau diarahin balik ke list booking kalau perlu */}
-              <button className="text-[#F5B301] text-[14px] font-bold px-4 py-1.5 border border-[#F5B301] rounded-lg bg-white hover:bg-[#FFFBEA]">
-                Ubah
-              </button>
-            </div>
+                  <div className="flex-1">
+                    <p className="text-[14px] font-bold text-[#1b2a4e]">{therapist.fullName}</p>
+                    <p className="text-[12px] text-gray-500">{therapist.totalPatientsLabel || "Fisioterapis"}</p>
+                  </div>
+                  
+                  {/* Checkbox Penanda Aktif */}
+                  <input
+                    type="checkbox"
+                    checked={isChecked}
+                    readOnly
+                    className="w-5 h-5 accent-[#F5B301] pointer-events-none"
+                  />
+                </div>
+              );
+            })}
           </div>
         </div>
 
-        {/* GRID KALENDER MINGGUAN (Shared Component) */}
-        <GridKalender 
+        {/* Pemanggilan Komponen Kalender Jadwal */}
+        <GridKalender
           selectedTherapists={selectedTerapis}
           selectedSlot={selectedSlot}
-          onSelectSlot={(id) => setSelectedSlot(id)}
+          onSelectSlot={(slotId) => setSelectedSlot(slotId)}
+          slots={slots}
+          therapists={therapists}
         />
 
-        {/* BOTTOM SECTION: Form Alasan & Tombol Aksi */}
-        <div className="border border-gray-200 rounded-2xl p-6 mb-10 mt-[-10px]">
-          <label className="flex gap-2 items-center font-bold text-[15px] text-[#1b2a4e] mb-3">
-            📝 Alasan Ubah Jadwal <span className="text-red-500">*</span>
-          </label>
-          <textarea 
-            rows={4}
+        {/* Input Alasan Ubah Jadwal */}
+        <div className="mt-8 mb-6">
+          <label className="block text-[14px] font-bold text-[#1b2a4e] mb-2">Alasan Ubah Jadwal (Opsional)</label>
+          <textarea
             value={alasan}
             onChange={(e) => setAlasan(e.target.value)}
-            placeholder="Contoh: Pasien berhalangan hadir karena urusan pekerjaan mendadak. Ingin digeser ke hari senin siang."
-            className="w-full border border-gray-200 rounded-xl p-4 text-[14px] outline-none focus:border-[#F5B301] resize-none mb-4"
+            placeholder="Contoh: Saya berhalangan hadir karena ada urusan mendadak..."
+            rows={3}
+            className="w-full p-4 border border-gray-200 rounded-xl outline-none focus:border-[#F5B301] text-[14px] resize-none transition-colors"
           />
-          <label className="flex items-center gap-3 cursor-pointer w-fit">
-            <div className={`w-5 h-5 rounded flex items-center justify-center transition-colors ${kirimNotif ? 'bg-[#F5B301]' : 'border border-gray-300'}`}>
-              {kirimNotif && <Check size={14} weight="bold" color="white" />}
-            </div>
-            <span className="text-[13px] text-gray-600">Kirim notifikasi otomatis ke WhatsApp pasien mengenai perubahan jadwal ini.</span>
-            <input type="checkbox" className="hidden" checked={kirimNotif} onChange={() => setKirimNotif(!kirimNotif)} />
-          </label>
         </div>
 
-        {/* Action Buttons */}
-        <div className="flex gap-4">
-          <Link href="/riwayat-booking" className="flex-1 py-4 text-center rounded-xl border border-gray-200 text-[#F5B301] font-bold text-[15px] hover:bg-gray-50 transition-colors">
-            &larr; Kembali
+        {/* Opsi Kirim Notifikasi WhatsApp */}
+        <label className="flex items-start gap-3 mb-10 cursor-pointer">
+          <input
+            type="checkbox"
+            checked={kirimNotif}
+            onChange={() => setKirimNotif(!kirimNotif)}
+            className="w-5 h-5 mt-0.5 accent-[#F5B301] rounded cursor-pointer"
+          />
+          <span className="text-[14px] text-gray-600 leading-relaxed">
+            Kirim detail perubahan jadwal ini ke WhatsApp saya secara otomatis.
+          </span>
+        </label>
+
+        {/* Area Tombol Navigasi */}
+        <div className="flex flex-col sm:flex-row gap-4 pt-6 border-t border-gray-100">
+          <Link
+            href={`/riwayat-booking`}
+            className="flex-1 py-4 text-center rounded-xl border border-gray-200 text-gray-600 font-bold text-[15px] hover:bg-gray-50 transition-colors"
+          >
+            Kembali
           </Link>
           
-          <Link 
-            href={selectedSlot ? `/riwayat-booking/ubah-jadwal/${id}/konfirmasi` : "#"}
-            onClick={(e) => {
-              if (!selectedSlot) e.preventDefault(); 
-            }}
+          <button
+            onClick={handleLanjut}
+            disabled={!selectedSlot}
             className={`flex-1 py-4 text-center rounded-xl font-bold text-[15px] transition-colors ${
-              selectedSlot 
-                ? 'bg-[#F5B301] text-white hover:bg-[#dda101] shadow-[0_4px_12px_rgba(245,179,1,0.2)]' 
-                : 'bg-gray-300 text-white cursor-not-allowed'
+              selectedSlot ? "bg-[#F5B301] text-white hover:bg-[#dda101]" : "bg-gray-200 text-gray-400 cursor-not-allowed"
             }`}
           >
-            Lanjut &rarr;
-          </Link>
+            Lanjut
+          </button>
         </div>
 
       </div>

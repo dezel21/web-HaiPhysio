@@ -1,3 +1,6 @@
+
+import { RiwayatBooking } from "@/types/booking.types";
+
 import { 
   Bandaids, 
   Brain, 
@@ -106,16 +109,6 @@ export const manfaatData = [
 ];
 
 // 5. Data Riwayat Booking untuk Halaman User
-export interface RiwayatBooking {
-  id: string;
-  layanan: string;
-  tanggal: string;
-  waktu: string;
-  terapis: string;
-  status: "Terkonfirmasi" | "Selesai" | "Dibatalkan";
-  keluhan?: string;
-  alasanBatal?: string;
-}
 
 export const dummyRiwayatBooking: RiwayatBooking[] = [
   {
