@@ -20,4 +20,21 @@
 
   /* Font Inter */
   --font-sans: 'Inter', sans-serif;
-  }
+}
+
+/* Hapus ikon mata di password (khusus browser Edge/IE) */
+input[type="password"]::-ms-reveal,
+input[type="password"]::-ms-clear {
+  display: none;
+}
+
+/* Tambahan buat Chrome/Safari/Edge baru (biar beneran ilang) */
+input[type="password"]::-webkit-password-reveal,
+input[type="password"]::-webkit-password-clear {
+  display: none;
+}
+
+/* Firefox */
+input[type="password"] {
+  -moz-appearance: textfield;
+}

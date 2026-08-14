@@ -1,5 +1,6 @@
 "use client";
 
+import { authApi } from "@/app/utils/api";
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useState } from "react";
@@ -49,27 +50,33 @@ export default function ResetPasswordPageClient() {
     ? "Silakan masukkan kata sandi baru yang kuat. Pastikan untuk menggunakan kombinasi yang unik demi keamanan optimal."
     : "Masukkan email Anda yang telah terdaftar. Kami akan mengirimkan tautan untuk mereset kata sandi Anda.";
 
-  function submitEmail(event: React.FormEvent<HTMLFormElement>) {
+  async function submitEmail(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
-
     if (!email.trim()) {
       setErrors({ email: "Email wajib diisi." });
       return;
     }
-
     if (!emailPattern.test(email)) {
       setErrors({ email: "Masukkan format email yang valid." });
       return;
     }
-
     setErrors({});
-    setStep("sent");
+    
+    try {
+      // Nembak API Lupa Password
+      await authApi.post("/forgot-password", { email });
+      setStep("sent");
+    } catch (error: any) {
+      console.error("Gagal request reset password:", error);
+      // Backend Hai Physio selalu sukses balik 200 demi keamanan, tapi jika error koneksi/rate limit:
+      const msg = error.response?.data?.error?.message || "Gagal mengirim permintaan. Coba lagi nanti.";
+      setErrors({ email: msg });
+    }
   }
 
-  function submitNewPassword(event: React.FormEvent<HTMLFormElement>) {
+  async function submitNewPassword(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const nextErrors: ResetErrors = {};
-
     if (!password) {
       nextErrors.password = "Kata sandi wajib diisi.";
     } else if (password.length < 8) {
@@ -77,20 +84,30 @@ export default function ResetPasswordPageClient() {
     } else if (!/[A-Za-z]/.test(password) || !/\d/.test(password)) {
       nextErrors.password = "Gunakan kombinasi huruf dan angka.";
     }
-
     if (!confirmPassword) {
       nextErrors.confirmPassword = "Konfirmasi kata sandi wajib diisi.";
     } else if (confirmPassword !== password) {
       nextErrors.confirmPassword = "Konfirmasi kata sandi belum sama.";
     }
-
     if (Object.keys(nextErrors).length > 0) {
       setErrors(nextErrors);
       return;
     }
-
-      setErrors({});
-    setStep("success");
+    setErrors({});
+    try {
+      // Ambil token dari query params URL jika user klik link dari email
+      const urlParams = new URLSearchParams(window.location.search);
+      const token = urlParams.get("token") || "dummy-token";
+      await authApi.post("/reset-password", {
+        token,
+        newPassword: password,
+        newPasswordConfirmation: confirmPassword
+      });
+      setStep("success");
+    } catch (error: any) {
+      const msg = error.response?.data?.error?.message || "Gagal memperbarui kata sandi. Token mungkin sudah kedaluwarsa.";
+      setErrors({ password: msg });
+    }
   }
 
   return (
