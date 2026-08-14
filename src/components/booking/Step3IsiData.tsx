@@ -1,8 +1,9 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Stethoscope, CalendarBlank, User, UserCircle, UploadSimple } from "@phosphor-icons/react";
 import Stepper from "./Stepper";
+import { profileService } from "@/services/profileService";
 
 interface Step3Props {
   onBack: () => void;
@@ -17,12 +18,32 @@ export default function Step3IsiData({ onBack, onNext, bookingData }: Step3Props
   // State untuk menyimpan semua isian form user
   // Dibuat pre-filled (sudah terisi) sesuai desain Figma
   const [formData, setFormData] = useState({
-    name: "Kartika Wulandari",
-    phone: "081234567890",
-    email: "Kartika123@gmail.com",
+    name: "",
+    phone: "",
+    email: "",
     complaint: "",
-    photoPreview: null as string | null, // Menyimpan URL sementara untuk preview foto
+    photoPreview: null as string | null,
   });
+
+  useEffect(() => {
+    const fetchUserProfile = async () => {
+      try {
+        const res = await profileService.getProfile();
+        const user = res.data?.user || res.user;
+        if (user) {
+          setFormData((prev) => ({
+            ...prev,
+            name: user.full_name || user.name || "",
+            phone: user.phone || "",
+            email: user.email || "",
+          }));
+        }
+      } catch (err) {
+        console.log("User belum login / profil belum terisi:", err);
+      }
+    };
+    fetchUserProfile();
+  }, []);
 
   // State untuk melacak pesan error (misal: "Nama tidak boleh kosong")
   const [errors, setErrors] = useState({
@@ -96,37 +117,24 @@ export default function Step3IsiData({ onBack, onNext, bookingData }: Step3Props
 
   // --- LOGIKA FRONT-END: Penterjemah Mock Data Jadwal ---
   // Fungsi ini membaca ID yang dipilih user dan mengembalikan teks yang sesuai
-  const getScheduleDetails = (id: string) => {
-    const slots: Record<string, any> = {
-      "s1": { time: "Senin, 07 Juli 2026 @ 09:00 WIB", therapist: "Ftr. Andi Pratama" },
-      "s4": { time: "Selasa, 08 Juli 2026 @ 10:00 WIB", therapist: "Ftr. Sari Wijaya, S.Ft" },
-      "s5": { time: "Rabu, 09 Juli 2026 @ 11:00 WIB", therapist: "Ftr. Bintang Dito" },
-      "s7": { time: "Jumat, 11 Juli 2026 @ 15:00 WIB", therapist: "Ftr. Sari Wijaya, S.Ft" },
-      "s9": { time: "Minggu, 13 Juli 2026 @ 13:00 WIB", therapist: "Ftr. Sari Wijaya, S.Ft" },
-    };
-    return slots[id] || { time: "Jadwal Belum Dipilih", therapist: "-" };
+  const formatScheduleText = () => {
+    if (!bookingData?.slotDate || !bookingData?.startTime) {
+      return "Jadwal Belum Dipilih";
+    }
+    const dateObj = new Date(bookingData.slotDate);
+    const dateFormatted = dateObj.toLocaleDateString("id-ID", {
+      weekday: "long",
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+    });
+    const timeFormatted = String(bookingData.startTime).substring(0, 5);
+    return `${dateFormatted} @ ${timeFormatted} WIB`;
   };
+  const displayServiceName = bookingData?.serviceName || "Fisioterapi";
+  const displaySchedule = formatScheduleText();
+  const displayTherapist = bookingData?.therapistName || "-";
 
-  const scheduleInfo = getScheduleDetails(bookingData.scheduleId);
-  const getServiceName = (id: string) => {
-    // Ubah id jadi huruf kecil semua biar aman kalau ada typo kapital dari Step 1
-    const safeId = id?.toLowerCase() || "";
-
-    if (safeId.includes("olahraga") || safeId === "1") {
-      return "Fisioterapi Olahraga";
-    }
-    if (safeId.includes("muskuloskeletal") || safeId === "2") {
-      return "Fisioterapi Muskuloskeletal";
-    }
-    if (safeId.includes("neurologi") || safeId === "3") {
-      return "Fisioterapi Neurologi";
-    }
-
-    // Kalau ID-nya bener-bener gak dikenali, tampilin apa adanya dari Step 1
-    return id || "Fisioterapi Olahraga (Cedera & Aktivitas Fisik)";
-  };
-
-  const serviceName = getServiceName(bookingData.serviceId);
   return (
     <div className="w-full flex flex-col items-center">
 
@@ -140,28 +148,21 @@ export default function Step3IsiData({ onBack, onNext, bookingData }: Step3Props
       {/* --- BOX RINGKASAN PILIHAN --- */}
       <div className="w-full bg-[#F8FAFC] border border-[#CBD5E1] rounded-[16px] p-5 mb-8">
         <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
-
           <div className="flex flex-col gap-3 text-[14px]">
             <Stethoscope size={20} weight="bold" className="text-[#3B82F6]" />
             <span className="w-[120px] text-gray-500">Layanan Terpilih</span>
-            {/* Teks ini sekarang ngikutin State */}
-            <span className="text-[#1b2a4e] font-medium">: {serviceName}</span>
+            <span className="text-[#1b2a4e] font-medium">: {displayServiceName}</span>
           </div>
-
           <div className="flex flex-col gap-3 text-[14px]">
             <CalendarBlank size={20} weight="bold" className="text-[#3B82F6]" />
             <span className="w-[120px] text-gray-500">Jadwal Terpilih</span>
-            {/* Teks ini sekarang ngikutin State */}
-            <span className="text-[#1b2a4e] font-medium">: {scheduleInfo.time}</span>
+            <span className="text-[#1b2a4e] font-medium">: {displaySchedule}</span>
           </div>
-
           <div className="flex flex-col gap-3 text-[14px]">
             <User size={20} weight="bold" className="text-[#3B82F6]" />
             <span className="w-[120px] text-gray-500">Nama Terapis</span>
-            {/* Teks ini sekarang ngikutin State */}
-            <span className="text-[#1b2a4e] font-medium">: {scheduleInfo.therapist}</span>
+            <span className="text-[#1b2a4e] font-medium">: {displayTherapist}</span>
           </div>
-
           <button onClick={onBack} className="shrink-0 w-full md:w-auto text-[#F5B301] text-[14px] font-bold px-5 py-2 border border-[#F5B301] rounded-xl bg-white hover:bg-[#FFFBEA]">
             ✎ Ubah
           </button>

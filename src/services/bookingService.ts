@@ -49,6 +49,12 @@ export const bookingService = {
     });
     return response.data;
   },
+  
+  // 6. Ambil Daftar Layanan
+  getFocusAreas: async () => {
+    const response = await bookingApi.get("/focus-areas");
+    return response.data;
+  },
 
   // 7. Narik kotak-kotak ketersediaan jadwal terapis (per minggu)
   getScheduleGrid: async (therapist_id: string, week: string) => {
