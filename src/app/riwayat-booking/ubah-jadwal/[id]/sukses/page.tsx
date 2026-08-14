@@ -71,7 +71,7 @@ export default function SuksesUbahJadwalPage() {
         {/* Ilustrasi Sukses (Ganti src-nya sesuai nama file ilustrasi lu di folder public) */}
         <div className="w-full max-w-[300px] mb-8">
           <img 
-            src="/illustration-success.png" 
+            src="/success-illustration.png" 
             alt="Sukses Ubah Jadwal" 
             className="w-full h-auto object-contain"
             // Kalau lu belum punya gambarnya, bisa biarin kosong dulu atau pakai div kotak pengganti
@@ -135,11 +135,11 @@ export default function SuksesUbahJadwalPage() {
         {/* Tombol Aksi Bawah */}
         <div className="w-full flex flex-col gap-3">
           <Link 
-            href={`/riwayat-booking/${booking.id}`}
-            className="w-full py-4 rounded-xl bg-[#F5B301] text-white font-bold text-[15px] hover:bg-[#dda101] transition-colors"
-          >
-            Lihat Detail Riwayat
-          </Link>
+          href="/riwayat-booking"
+          className="w-full py-4 rounded-xl bg-[#F5B301] text-white font-bold text-[15px] hover:bg-[#dda101] transition-colors"
+        >
+          Lihat Detail Riwayat
+        </Link>
           <Link 
             href="/"
             className="w-full py-4 rounded-xl bg-gray-100 text-gray-500 font-bold text-[15px] hover:bg-gray-200 transition-colors"
