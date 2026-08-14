@@ -31,19 +31,18 @@ export default function PengaturanProfilPage() {
 
         // Bikin fungsi kecil buat ngerapiin format tanggal (dari YYYY-MM-DDTHH... jadi DD/MM/YYYY)
         let formattedDate = "Belum diatur";
-        if (user.date_of_birth) {
-          const dateObj = new Date(user.date_of_birth);
-          // Nambahin '0' di depan kalau angkanya cuma satuan (misal: 1 jadi 01)
-          const day = String(dateObj.getDate()).padStart(2, '0');
-          const month = String(dateObj.getMonth() + 1).padStart(2, '0'); 
-          const year = dateObj.getFullYear();
-          formattedDate = `${day}/${month}/${year}`;
+        const rawDob = user.date_of_birth || user.dateOfBirth;
+        
+        if (rawDob && typeof rawDob === "string") {
+          const parts = rawDob.split("T")[0].split("-"); // ["1995", "03", "12"]
+          if (parts.length === 3) {
+            formattedDate = `${parts[2]}/${parts[1]}/${parts[0]}`; // "12/03/1995"
+          }
         }
-
         setProfileData({
-          fullName: user.full_name,
-          email: user.email,
-          phone: user.phone,
+          fullName: user.full_name || user.name || "",
+          email: user.email || "",
+          phone: user.phone || "",
           dateOfBirth: formattedDate, 
         });
       } catch (error) {
