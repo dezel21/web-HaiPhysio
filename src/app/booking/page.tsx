@@ -1,12 +1,23 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import { profileService } from "@/services/profileService";
 import Step1PilihLayanan from "../../components/booking/Step1PilihLayanan";
 import Step2PilihWaktu from "../../components/booking/Step2PilihWaktu";
 import Step3IsiData from "../../components/booking/Step3IsiData";
 import Step4Konfirmasi from "../../components/booking/Step4Konfirmasi";
 
 export default function BookingPage() {
+  const router = useRouter();
+
+  // Wajibkan login sebelum masuk flow booking
+  useEffect(() => {
+    profileService.getProfile().catch(() => {
+      router.push("/login");
+    });
+  }, [router]);
+
   // Melacak user sedang ada di langkah berapa (1 sampai 4)
   const [currentStep, setCurrentStep] = useState(1);
 

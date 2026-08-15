@@ -29,50 +29,36 @@ export default function ContactSection({
         </div>
 
         {/* Grid Cards (Fix 3 Kolom) */}
-       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-6">
           
           {/* Card WhatsApp */}
-          <Link href="https://wa.me/628983050149" target="_blank" className="flex flex-col items-center justify-center text-center bg-white rounded-[16px] p-8 shadow-[0_4px_20px_rgb(0,0,0,0.05)] border border-gray-100 gap-4 hover:shadow-md transition-shadow">
-            <div className="flex items-center gap-3">
-              <WhatsappLogo size={32} weight="fill" color="#1b2a4e" />
-              <span className="text-[#1b2a4e] text-[20px] md:text-[22px] font-bold">+62 898-3050-149</span>
-            </div>
-            <p className="text-[#585858] text-[14px]">Chat langsung, respon cepat di jam operasional</p>
+          <Link href="https://wa.me/628983050149" target="_blank" className="flex flex-col items-center justify-center text-center bg-white rounded-[16px] p-6 shadow-[0_4px_20px_rgb(0,0,0,0.05)] border border-gray-100 gap-3 hover:shadow-md transition-shadow">
+            <WhatsappLogo size={32} weight="fill" color="#1b2a4e" />
+            <span className="text-[#1b2a4e] text-[18px] font-bold">+62 898-3050-149</span>
+            <p className="text-[#585858] text-[13px]">Chat langsung, respon cepat</p>
           </Link>
-
           {/* Card Email */}
-          <Link href="mailto:haiphysio@gmail.com" className="flex flex-col items-center justify-center text-center bg-white rounded-[16px] p-6 shadow-[0_4px_20px_rgb(0,0,0,0.05)] border border-gray-100 gap-4 hover:shadow-md transition-shadow">
-            <div className="flex items-center gap-3 w-full justify-center">
-              <EnvelopeSimple size={32} weight="fill" color="#1b2a4e" className="shrink-0" />
-              <span className="text-[#1b2a4e] text-[20px] md:text-[22px] lg:text-[22px] font-bold">haiphysio@gmail.com</span>
-            </div>
-            <p className="text-[#585858] text-[14px]">Untuk pertanyaan yang butuh jawaban lebih detail</p>
+          <Link href="mailto:haiphysio@gmail.com" className="flex flex-col items-center justify-center text-center bg-white rounded-[16px] p-6 shadow-[0_4px_20px_rgb(0,0,0,0.05)] border border-gray-100 gap-3 hover:shadow-md transition-shadow">
+            <EnvelopeSimple size={32} weight="fill" color="#1b2a4e" />
+            <span className="text-[#1b2a4e] text-[18px] font-bold truncate max-w-full">haiphysio@gmail.com</span>
+            <p className="text-[#585858] text-[13px]">Pertanyaan lebih detail</p>
           </Link>
-
           {/* Card Instagram */}
-          <Link href="https://instagram.com/fisioterapi_jakarta_timur" target="_blank" className="flex flex-col items-center justify-center text-center bg-white rounded-[16px] p-8 shadow-[0_4px_20px_rgb(0,0,0,0.05)] border border-gray-100 gap-4 hover:shadow-md transition-shadow">
-            <div className="flex items-center gap-3">
-              <InstagramLogo size={32} weight="fill" color="#1b2a4e" />
-              <span className="text-[#1b2a4e] text-[20px] md:text-[22px] font-bold">@fisioterapi_jakarta_timur</span>
-            </div>
-            <p className="text-[#585858] text-[14px]">Lihat kegiatan dan info terbaru dari klinik</p>
+          <Link href="https://instagram.com/fisioterapi_jakarta_timur" target="_blank" className="flex flex-col items-center justify-center text-center bg-white rounded-[16px] p-6 shadow-[0_4px_20px_rgb(0,0,0,0.05)] border border-gray-100 gap-3 hover:shadow-md transition-shadow">
+            <InstagramLogo size={32} weight="fill" color="#1b2a4e" />
+            <span className="text-[#1b2a4e] text-[16px] font-bold">@fisioterapi_jakarta_timur</span>
+            <p className="text-[#585858] text-[13px]">Info terbaru klinik</p>
           </Link>
-
           {/* Card Jam Operasional */}
-          <div className="md:col-span-2 xl:col-span-3 flex flex-col items-center justify-center text-center bg-white rounded-[16px] p-6 shadow-sm border border-gray-100">
-            <div className="flex items-center gap-4">
-              <Clock size={36} weight="fill" color="#1b2a4e" />
-              <span className="text-[#1b2a4e] text-[20px] md:text-[22px] font-bold text-left leading-tight">
-                Senin - Sabtu,<br/>08.00 - 16.00 WIB
-              </span>
-            </div>
-            <p className="text-[#585858] text-[14px]">Hari minggu klinik tutup</p>
+          <div className="flex flex-col items-center justify-center text-center bg-white rounded-[16px] p-6 shadow-[0_4px_20px_rgb(0,0,0,0.05)] border border-gray-100 gap-3">
+            <Clock size={32} weight="fill" color="#1b2a4e" />
+            <span className="text-[#1b2a4e] text-[16px] font-bold leading-tight">
+              Senin - Sabtu<br/>08.00 - 16.00 WIB
+            </span>
+            <p className="text-[#585858] text-[13px]">Hari Minggu tutup</p>
           </div>
-
         </div>
-
         {children}
-
       </div>
     </section>
   );

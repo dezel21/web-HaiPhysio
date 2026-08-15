@@ -2,6 +2,8 @@
 
 import Image from "next/image";
 import Link from "next/link";
+import { useState, useEffect } from "react";
+import { profileService } from "@/services/profileService";
 import FokusLayanan from "@/components/home/FokusLayanan";
 import LocationMap from "@/components/home/LocationMap";
 import ContactSection from "@/components/home/ContactSection";
@@ -10,11 +12,18 @@ import {
   Clock,
   InstagramLogo,
   ArrowRight,
-  EnvelopeSimple
 } from "@phosphor-icons/react";
 
 export default function Beranda() {
-  const isLoggedIn = false;
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+
+  useEffect(() => {
+    profileService.getProfile()
+      .then(() => setIsLoggedIn(true))
+      .catch(() => setIsLoggedIn(false));
+  }, []);
+
+  const appointmentHref = isLoggedIn ? "/booking" : "/login";
 
   return (
     <div className="w-full flex flex-col">
@@ -43,7 +52,7 @@ export default function Beranda() {
               Nyeri pinggang, cedera olahraga, atau kaku sendi bisa ditangani dengan tepat. Setiap sesi terapi di Hai Physio dicatat dan dievaluasi, jadi Anda tahu pasti progresnya.
             </p>
             <Link
-              href={isLoggedIn ? "/booking" : "/login"}
+              href={appointmentHref}
               className="inline-flex items-center justify-center w-fit px-8 h-[48px] mt-2 bg-[#F5B301] hover:bg-[#dda101] text-white font-medium text-[16px] rounded-[8px] transition-colors"
             >
               Buat Janji Temu

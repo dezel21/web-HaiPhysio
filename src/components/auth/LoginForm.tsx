@@ -60,7 +60,7 @@ export default function LoginForm() {
       });
 
       // Kalau sukses dapet cookie dari backend, langsung lempar ke halaman profil
-      window.location.href = "/profil";
+      window.location.href = "/";
       
     } catch (error: any) {
       console.error("Gagal login:", error);
