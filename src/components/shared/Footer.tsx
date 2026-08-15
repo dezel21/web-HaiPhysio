@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import Image from "next/image";
+import { usePathname } from "next/navigation";
 import {
   WhatsappLogo,
   EnvelopeSimple,
@@ -11,6 +12,9 @@ import {
 } from "@phosphor-icons/react";
 
 export default function Footer() {
+  const pathname = usePathname();
+  if (pathname.startsWith("/admin")) return null;
+  
   return (
     <footer className="w-full bg-[#24365C] px-5 lg:px-[80px] pt-10 pb-6 flex flex-col justify-between m-0 border-none mt-auto">
       <div className="w-full max-w-[1440px] mx-auto grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-10 items-start">

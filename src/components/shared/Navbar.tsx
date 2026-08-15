@@ -14,6 +14,8 @@ export default function Navbar() {
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [userData, setUserData] = useState<{ fullName: string } | null>(null);
 
+  if (pathname.startsWith("/admin")) return null;
+
   // Cek sesi login otomatis ke API backend
   useEffect(() => {
     const checkAuth = async () => {
