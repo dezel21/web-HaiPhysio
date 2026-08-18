@@ -1,94 +1,155 @@
 "use client";
 
-import { Brain, Barbell, Bandaids } from "@phosphor-icons/react";
-
-// Data bohongan (mock) sesuai desain Figma lu
-const dummySchedules = [
-  { id: 1, waktu: "08:00 - 09:00", pasien: "Mochammad Fachriza Ramadhan", terapis: "Ftr. Andi Pratama", layanan: "Fisioterapi Neuro", status: "Terkonfirmasi" },
-  { id: 2, waktu: "09:00 - 10:00", pasien: "Siti Nurhaliza", terapis: "Ftr. Bintang Dito", layanan: "Fisioterapi Olahraga", status: "Selesai" },
-  { id: 3, waktu: "10:00 - 11:00", pasien: "Budi Santoso", terapis: "Ftr. Sari Wijaya, S.Ft", layanan: "Fisioterapi Muskuloskeletal", status: "Dibatalkan" },
-  { id: 4, waktu: "11:00 - 12:00", pasien: "Aisyah Putri Wulandari", terapis: "Ftr. Andi Pratama", layanan: "Fisioterapi Neuro", status: "Terkonfirmasi" },
-  { id: 5, waktu: "12:00 - 13:00", pasien: "Roni Wijaya", terapis: "Ftr. Bintang Dito", layanan: "Fisioterapi Olahraga", status: "Selesai" },
-  { id: 6, waktu: "13:00 - 14:00", pasien: "Joko Prasetyo Kusumo", terapis: "Ftr. Sari Wijaya, S.Ft", layanan: "Fisioterapi Muskuloskeletal", status: "Dibatalkan" },
-];
+import { useState, useEffect } from "react";
+import Link from "next/link";
+import { Brain, Barbell, Bandaids, CalendarX, ArrowRight } from "@phosphor-icons/react";
+import { adminService } from "@/services/adminService";
 
 export default function ScheduleTable() {
+  const [todaySchedules, setTodaySchedules] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  // Fungsi bantuan buat nampilin label layanan beserta ikonnya
+  useEffect(() => {
+    const fetchTodaySchedules = async () => {
+      try {
+        const now = new Date();
+        const y = now.getFullYear();
+        const m = String(now.getMonth() + 1).padStart(2, "0");
+        const d = String(now.getDate()).padStart(2, "0");
+        const todayStr = `${y}-${m}-${d}`;
+
+        const res = await adminService.getBookings();
+        const allBookings = res.data?.bookings || res.bookings || [];
+
+        // Filter hanya booking untuk HARI INI
+        const filteredToday = allBookings.filter((b: any) => {
+          const slotDate = b.slotDate || b.slot_date || "";
+          return slotDate === todayStr;
+        });
+
+        setTodaySchedules(filteredToday);
+      } catch (error) {
+        console.error("Gagal menarik jadwal hari ini:", error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchTodaySchedules();
+  }, []);
+
   const renderLayananBadge = (layanan: string) => {
-    let Icon = Bandaids; // Default icon
-    if (layanan.includes("Neuro")) Icon = Brain;
-    if (layanan.includes("Olahraga")) Icon = Barbell;
+    let Icon = Bandaids;
+    if (layanan.toLowerCase().includes("neuro")) Icon = Brain;
+    if (layanan.toLowerCase().includes("olahraga")) Icon = Barbell;
 
     return (
-      <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full border border-[#F5B301] text-[#F5B301] bg-white">
-        <Icon size={16} weight="regular" />
+      <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border border-[#F5B301] text-[#D69A00] bg-yellow-50/50">
+        <Icon size={16} weight="bold" />
         <span className="text-[13px] font-bold">{layanan}</span>
       </div>
     );
   };
 
-  // Fungsi bantuan buat nampilin status dengan titik warna-warni
-  const renderStatusBadge = (status: string) => {
-    let colorClass = "";
-    let dotClass = "";
+  const renderStatusBadge = (statusRaw: string) => {
+    const status = (statusRaw || "").toLowerCase();
+    let label = "Terkonfirmasi";
+    let colorClass = "border-green-500 text-green-600 bg-green-50/40";
+    let dotClass = "bg-green-500";
 
-    if (status === "Terkonfirmasi") {
-      colorClass = "border-green-500 text-green-600 bg-white";
-      dotClass = "bg-green-500";
-    } else if (status === "Selesai") {
-      colorClass = "border-gray-400 text-gray-600 bg-white";
+    if (status === "selesai") {
+      label = "Selesai";
+      colorClass = "border-gray-300 text-gray-600 bg-gray-50";
       dotClass = "bg-gray-400";
-    } else if (status === "Dibatalkan") {
-      colorClass = "border-red-400 text-red-500 bg-white";
+    } else if (status === "dibatalkan") {
+      label = "Dibatalkan";
+      colorClass = "border-red-300 text-red-500 bg-red-50/40";
       dotClass = "bg-red-500";
+    } else if (status === "tidak_hadir") {
+      label = "Tidak Hadir";
+      colorClass = "border-orange-300 text-orange-500 bg-orange-50/40";
+      dotClass = "bg-orange-500";
     }
 
     return (
-      <div className={`inline-flex items-center gap-2 px-4 py-1.5 rounded-full border ${colorClass}`}>
+      <div className={`inline-flex items-center gap-2 px-3.5 py-1 rounded-full border ${colorClass}`}>
         <span className={`w-2 h-2 rounded-full ${dotClass}`}></span>
-        <span className="text-[13px] font-bold">{status}</span>
+        <span className="text-[12px] font-bold">{label}</span>
       </div>
     );
+  };
+
+  const formatJam = (start?: string, end?: string) => {
+    if (!start) return "-";
+    const s = start.substring(0, 5);
+    const e = end ? end.substring(0, 5) : "";
+    return e ? `${s} - ${e} WIB` : `${s} WIB`;
   };
 
   return (
     <div className="w-full bg-white border border-gray-200 rounded-[20px] shadow-sm overflow-hidden">
       
-      {/* Bagian Header Tabel */}
-      <div className="px-6 py-5 border-b border-gray-100 flex flex-col gap-1">
-        <h3 className="text-[18px] font-bold text-[#1b2a4e]">Jadwal Sesi Hari Ini</h3>
-        <span className="text-[13px] text-gray-500">Total {dummySchedules.length} sesi</span>
+      {/* Header Tabel */}
+      <div className="px-6 py-5 border-b border-gray-100 flex items-center justify-between">
+        <div className="flex flex-col gap-0.5">
+          <h3 className="text-[18px] font-bold text-[#1b2a4e]">Jadwal Sesi Hari Ini</h3>
+          <span className="text-[13px] text-gray-500">
+            {isLoading ? "Memuat jadwal..." : `Total ${todaySchedules.length} sesi hari ini`}
+          </span>
+        </div>
+
+        <Link 
+          href="/admin/booking" 
+          className="text-[13px] font-bold text-[#D69A00] hover:text-[#F5B301] flex items-center gap-1 transition-colors"
+        >
+          Lihat Semua Booking
+          <ArrowRight size={16} weight="bold" />
+        </Link>
       </div>
 
-      {/* Bagian Isi Tabel (Bisa di-scroll ke samping kalau layarnya kekecilan) */}
-      <div className="w-full overflow-x-auto">
-        <table className="w-full text-left border-collapse">
-          <thead>
-            <tr className="bg-white border-b border-gray-100">
-              <th className="py-4 px-6 text-[13px] font-bold text-gray-500 w-[50px]">No</th>
-              <th className="py-4 px-6 text-[13px] font-bold text-gray-500 min-w-[140px]">Waktu</th>
-              <th className="py-4 px-6 text-[13px] font-bold text-gray-500 min-w-[200px]">Nama Pasien</th>
-              <th className="py-4 px-6 text-[13px] font-bold text-gray-500 min-w-[180px]">Nama Terapis</th>
-              <th className="py-4 px-6 text-[13px] font-bold text-gray-500 min-w-[200px] text-center">Layanan</th>
-              <th className="py-4 px-6 text-[13px] font-bold text-gray-500 min-w-[150px] text-center">Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            {/* Looping data jadwal buat dijadiin baris tabel */}
-            {dummySchedules.map((row, index) => (
-              <tr key={row.id} className="border-b border-gray-50 hover:bg-gray-50/50 transition-colors">
-                <td className="py-4 px-6 text-[14px] text-gray-500">{index + 1}</td>
-                <td className="py-4 px-6 text-[14px] text-gray-600">{row.waktu}</td>
-                <td className="py-4 px-6 text-[14px] font-bold text-[#1b2a4e]">{row.pasien}</td>
-                <td className="py-4 px-6 text-[14px] text-[#1b2a4e]">{row.terapis}</td>
-                <td className="py-4 px-6 text-center">{renderLayananBadge(row.layanan)}</td>
-                <td className="py-4 px-6 text-center">{renderStatusBadge(row.status)}</td>
+      {/* Isi Tabel atau Empty State */}
+      {isLoading ? (
+        <div className="py-16 text-center text-gray-400 font-medium">
+          Memuat jadwal sesi hari ini...
+        </div>
+      ) : todaySchedules.length === 0 ? (
+        <div className="py-16 flex flex-col items-center justify-center text-center px-4">
+          <div className="w-16 h-16 rounded-full bg-gray-50 border border-gray-100 flex items-center justify-center text-gray-400 mb-3">
+            <CalendarX size={32} />
+          </div>
+          <h4 className="text-[16px] font-bold text-[#1b2a4e] mb-1">Belum Ada Sesi Hari Ini</h4>
+          <p className="text-[13px] text-gray-500 max-w-sm">
+            Tidak ada pasien yang memiliki jadwal terapi untuk hari ini. Anda dapat melihat jadwal di hari lain pada menu Booking.
+          </p>
+        </div>
+      ) : (
+        <div className="w-full overflow-x-auto">
+          <table className="w-full text-left border-collapse">
+            <thead>
+              <tr className="bg-gray-50/50 border-b border-gray-100">
+                <th className="py-4 px-6 text-[13px] font-bold text-gray-500 w-[50px]">No</th>
+                <th className="py-4 px-6 text-[13px] font-bold text-gray-500 min-w-[150px]">Waktu</th>
+                <th className="py-4 px-6 text-[13px] font-bold text-gray-500 min-w-[200px]">Nama Pasien</th>
+                <th className="py-4 px-6 text-[13px] font-bold text-gray-500 min-w-[180px]">Nama Terapis</th>
+                <th className="py-4 px-6 text-[13px] font-bold text-gray-500 min-w-[180px] text-center">Layanan</th>
+                <th className="py-4 px-6 text-[13px] font-bold text-gray-500 min-w-[150px] text-center">Status</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-      </div>
+            </thead>
+            <tbody>
+              {todaySchedules.map((row: any, index: number) => (
+                <tr key={row.id} className="border-b border-gray-50 hover:bg-gray-50/50 transition-colors">
+                  <td className="py-4 px-6 text-[14px] text-gray-500">{index + 1}</td>
+                  <td className="py-4 px-6 text-[14px] text-gray-600 font-medium">{formatJam(row.startTime || row.start_time, row.endTime || row.end_time)}</td>
+                  <td className="py-4 px-6 text-[14px] font-bold text-[#1b2a4e]">{row.patientName || row.patient_name}</td>
+                  <td className="py-4 px-6 text-[14px] text-[#1b2a4e]">{row.therapistName || row.therapist_name}</td>
+                  <td className="py-4 px-6 text-center">{renderLayananBadge(row.serviceName || row.service_name || "Fisioterapi")}</td>
+                  <td className="py-4 px-6 text-center">{renderStatusBadge(row.status)}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
 
     </div>
   );
