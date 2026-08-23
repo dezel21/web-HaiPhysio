@@ -1,10 +1,36 @@
+"use client";
+
+import { useState, useEffect } from "react";
 import Link from "next/link";
+import { Plus } from "@phosphor-icons/react";
 import TerapisStats from "@/components/admin/terapis/TerapisStats";
 import TerapisTable from "@/components/admin/terapis/TerapisTable";
+import { adminService } from "@/services/adminService";
 
 export default function AdminTerapisPage() {
+  const [therapists, setTherapists] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  const loadTherapists = async () => {
+    setIsLoading(true);
+    try {
+      const res = await adminService.getTherapists();
+      const list = res.data?.therapists || res.therapists || [];
+      setTherapists(list);
+    } catch (error) {
+      console.error("Gagal memuat data terapis:", error);
+      setTherapists([]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadTherapists();
+  }, []);
+
   return (
-    <div className="w-full flex flex-col gap-8 pb-10">
+    <div className="w-full flex flex-col gap-8 pb-12">
       
       {/* --- HEADER HALAMAN --- */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -16,17 +42,22 @@ export default function AdminTerapisPage() {
         {/* Tombol Tambah Terapis */}
         <Link 
           href="/admin/terapis/tambah"
-          className="flex items-center justify-center px-6 py-3 bg-[#F5B301] hover:bg-[#dda101] text-white font-bold text-[15px] rounded-xl transition-all shadow-sm shrink-0"
+          className="flex items-center justify-center gap-2 px-6 py-3 bg-[#F5B301] hover:bg-[#dda101] text-white font-bold text-[14px] rounded-xl transition-all shadow-sm shrink-0"
         >
+          <Plus size={18} weight="bold" />
           Tambah Terapis
         </Link>
       </div>
 
       {/* --- KOMPONEN STATISTIK --- */}
-      <TerapisStats />
+      <TerapisStats therapists={therapists} isLoading={isLoading} />
 
       {/* --- KOMPONEN TABEL & FILTER --- */}
-      <TerapisTable />
+      <TerapisTable 
+        therapists={therapists} 
+        isLoading={isLoading} 
+        onRefresh={loadTherapists}
+      />
 
     </div>
   );

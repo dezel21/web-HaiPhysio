@@ -4,6 +4,7 @@ import { useState } from "react";
 import AuthButton from "./AuthButton";
 import AuthInput from "./AuthInput";
 import AuthPasswordInput from "./AuthPasswordInput";
+import { authApi } from "@/app/utils/api";
 
 type AdminLoginErrors = {
   email?: string;
@@ -11,12 +12,12 @@ type AdminLoginErrors = {
 };
 
 const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const adminEmails = ["admin@haiphysio.com"];
 
 export default function AdminLoginForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [errors, setErrors] = useState<AdminLoginErrors>({});
+  const [isLoading, setIsLoading] = useState(false);
 
   function validate() {
     const nextErrors: AdminLoginErrors = {};
@@ -36,35 +37,55 @@ export default function AdminLoginForm() {
     return nextErrors;
   }
 
+  const handleAdminLogin = async (event: React.FormEvent) => {
+    event.preventDefault();
+    const validationErrors = validate();
+
+    if (Object.keys(validationErrors).length > 0) {
+      setErrors(validationErrors);
+      return;
+    }
+
+    setErrors({});
+    setIsLoading(true);
+
+    try {
+      // 1. Nembak API Login khusus Admin
+      await authApi.post("/admin/login", {
+        email: email.trim(),
+        password: password,
+      });
+
+      // 2. Sukses login admin -> Langsung lempar ke Dashboard Admin
+      window.location.href = "/admin";
+    } catch (error: any) {
+      console.error("Gagal login admin:", error);
+      const status = error.response?.status;
+
+      if (status === 401) {
+        setErrors({ password: "Email atau kata sandi admin salah. Silakan cek kembali." });
+      } else if (status === 429) {
+        setErrors({ email: "Terlalu banyak percobaan. Tunggu sebentar lalu coba lagi." });
+      } else {
+        setErrors({ password: "Gagal terhubung ke server auth. Pastikan backend aktif." });
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
     <form
       className="space-y-5"
       noValidate
-      onSubmit={(event) => {
-        event.preventDefault();
-        const validationErrors = validate();
-
-        if (Object.keys(validationErrors).length > 0) {
-          setErrors(validationErrors);
-          return;
-        }
-
-        if (!adminEmails.includes(email.trim().toLowerCase())) {
-          setErrors({
-            email: "Email ini tidak terdaftar sebagai akun Admin",
-          });
-          return;
-        }
-
-        setErrors({});
-      }}
+      onSubmit={handleAdminLogin}
     >
       <AuthInput
         label="Email Admin"
         name="email"
         type="email"
         autoComplete="email"
-        placeholder="contoh@email.com"
+        placeholder="admin@haiphysio.com"
         value={email}
         onChange={(event) => setEmail(event.target.value)}
         error={errors.email}
@@ -78,7 +99,9 @@ export default function AdminLoginForm() {
         onChange={(event) => setPassword(event.target.value)}
         error={errors.password}
       />
-      <AuthButton>Masuk ke Dashboard</AuthButton>
+      <AuthButton disabled={isLoading}>
+        {isLoading ? "Memverifikasi Admin..." : "Masuk ke Dashboard"}
+      </AuthButton>
     </form>
   );
 }

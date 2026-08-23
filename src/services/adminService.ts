@@ -16,6 +16,15 @@ export const adminService = {
     return response.data;
   },
 
+  // Reschedule / Ubah Jadwal Booking Pasien
+  rescheduleBooking: async (id: string, newSlotId: string, reason?: string) => {
+    const response = await bookingApi.patch(`/bookings/${id}/reschedule`, {
+      new_slot_id: newSlotId,
+      reschedule_reason: reason
+    });
+    return response.data;
+  },
+
 
   // --- 2. MANAJEMEN SLOT JADWAL TERAPIS ---
 

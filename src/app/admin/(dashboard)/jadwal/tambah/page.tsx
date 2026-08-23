@@ -1,20 +1,24 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation"; 
 import { CaretRight, CaretDown, Info, Brain, Barbell, Bandaids, CheckCircle } from "@phosphor-icons/react";
+import { adminService } from "@/services/adminService";
+import { bookingService } from "@/services/bookingService";
 
 export default function TambahJadwalPage() {
   const router = useRouter();
 
-  const [terapis, setTerapis] = useState("");
+  const [therapists, setTherapists] = useState<any[]>([]);
+  const [selectedTherapistId, setSelectedTherapistId] = useState("");
   const [tanggal, setTanggal] = useState("");
-  const [jamMulai, setJamMulai] = useState("");
-  const [jamSelesai, setJamSelesai] = useState("");
-  const [selectedLayanan, setSelectedLayanan] = useState<string | null>(null);
+  const [jamMulai, setJamMulai] = useState("08:00");
+  const [jamSelesai, setJamSelesai] = useState("09:00");
+  const [selectedLayanan, setSelectedLayanan] = useState<string | null>("muskuloskeletal");
   
   const [showToast, setShowToast] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const layananList = [
     { id: "neuro", name: "Fisioterapi Neuro", icon: Brain },
@@ -22,19 +26,50 @@ export default function TambahJadwalPage() {
     { id: "muskuloskeletal", name: "Fisioterapi Muskuloskeletal", icon: Bandaids },
   ];
 
-  const handleSave = () => {
-    setShowToast(true);
-    setTimeout(() => {
-      setShowToast(false);
-      router.push("/admin/jadwal");
-    }, 2000);
+  // Tarik data terapis asli dari database
+  useEffect(() => {
+    const fetchTherapists = async () => {
+      try {
+        const res = await adminService.getTherapists();
+        const list = res.data?.therapists || res.therapists || [];
+        setTherapists(list);
+        if (list.length > 0) {
+          setSelectedTherapistId(list[0].id);
+        }
+      } catch (error) {
+        console.error("Gagal menarik daftar terapis:", error);
+      }
+    };
+    fetchTherapists();
+  }, []);
+
+  const handleSave = async () => {
+    if (!selectedTherapistId || !tanggal) {
+      alert("Mohon pilih Fisioterapis dan Tanggal Praktek!");
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      // Generate / buat slot ketersediaan
+      await adminService.generateWeekSlots(tanggal);
+      setShowToast(true);
+      setTimeout(() => {
+        setShowToast(false);
+        router.push("/admin/jadwal");
+      }, 1500);
+    } catch (error) {
+      console.error("Gagal menambah slot jadwal:", error);
+      alert("Gagal menambahkan slot jadwal. Silakan coba lagi.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
-    // 1. Bungkus paling luar dibikin w-full aja (nggak usah di-center)
     <div className="w-full flex flex-col gap-6 pb-10">
       
-      {/* --- BREADCRUMB & JUDUL (Tetap rata kiri) --- */}
+      {/* --- BREADCRUMB & JUDUL --- */}
       <div className="flex flex-col gap-2">
         <div className="flex items-center gap-2 text-[13px] text-gray-500 font-medium">
           <Link href="/admin/jadwal" className="hover:text-[#F5B301] transition-colors">
@@ -46,7 +81,7 @@ export default function TambahJadwalPage() {
         <h2 className="text-[28px] font-bold text-[#1b2a4e]">Tambah Slot Jadwal Baru</h2>
       </div>
 
-      {/* --- KOTAK FORM UTAMA (Ini yang di-center pakai mx-auto & max-w) --- */}
+      {/* --- FORM UTAMA --- */}
       <div className="w-full max-w-[900px] mx-auto bg-white border border-gray-200 rounded-2xl p-6 md:p-8 flex flex-col gap-8 shadow-sm">
         
         {/* 1. Input Nama Fisioterapis */}
@@ -54,14 +89,16 @@ export default function TambahJadwalPage() {
           <label className="text-[14px] font-bold text-[#1b2a4e]">Nama Fisioterapis</label>
           <div className="relative">
             <select 
-              value={terapis}
-              onChange={(e) => setTerapis(e.target.value)}
+              value={selectedTherapistId}
+              onChange={(e) => setSelectedTherapistId(e.target.value)}
               className="w-full appearance-none bg-white border border-gray-200 text-[#1b2a4e] text-[14px] p-4 rounded-xl outline-none focus:border-[#F5B301] transition-colors cursor-pointer"
             >
-              <option value="" disabled hidden className="text-gray-400">Nama Fisioterapis</option>
-              <option value="Ftr. Andi Pratama">Ftr. Andi Pratama</option>
-              <option value="Ftr. Bintang Dito">Ftr. Bintang Dito</option>
-              <option value="Ftr. Sari Wijaya, S.Ft">Ftr. Sari Wijaya, S.Ft</option>
+              <option value="" disabled hidden className="text-gray-400">Pilih Fisioterapis</option>
+              {therapists.map((t) => (
+                <option key={t.id} value={t.id}>
+                  {t.name || t.fullName} - {t.specialization || "Fisioterapis"}
+                </option>
+              ))}
             </select>
             <CaretDown size={18} className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
           </div>
@@ -72,19 +109,12 @@ export default function TambahJadwalPage() {
         {/* 2. Input Tanggal Praktek */}
         <div className="flex flex-col gap-2">
           <label className="text-[14px] font-bold text-[#1b2a4e]">Tanggal Praktek</label>
-          <div className="relative">
-            <select 
-              value={tanggal}
-              onChange={(e) => setTanggal(e.target.value)}
-              className="w-full appearance-none bg-white border border-gray-200 text-[#1b2a4e] text-[14px] p-4 rounded-xl outline-none focus:border-[#F5B301] transition-colors cursor-pointer"
-            >
-              <option value="" disabled hidden className="text-gray-400">Select a date</option>
-              <option value="21 Juli 2026">21 Juli 2026</option>
-              <option value="22 Juli 2026">22 Juli 2026</option>
-              <option value="23 Juli 2026">23 Juli 2026</option>
-            </select>
-            <CaretDown size={18} className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none" />
-          </div>
+          <input 
+            type="date" 
+            value={tanggal}
+            onChange={(e) => setTanggal(e.target.value)}
+            className="w-full bg-white border border-gray-200 text-[#1b2a4e] text-[14px] p-4 rounded-xl outline-none focus:border-[#F5B301] transition-colors cursor-pointer"
+          />
           <span className="text-[12px] text-gray-400 mt-1">Pilih tanggal untuk ketersediaan slot terapis.</span>
         </div>
 
@@ -126,6 +156,7 @@ export default function TambahJadwalPage() {
               return (
                 <button
                   key={layanan.id}
+                  type="button"
                   onClick={() => setSelectedLayanan(layanan.id)}
                   className={`flex items-center justify-center gap-2 py-3.5 px-4 rounded-xl border transition-all duration-200
                     ${isSelected 
@@ -141,7 +172,7 @@ export default function TambahJadwalPage() {
           </div>
         </div>
 
-        {/* 5. Warning Box (Himbauan) */}
+        {/* 5. Warning Box */}
         <div className="bg-[#FFFBEA] border border-[#fdeeb3] rounded-xl p-5 flex items-start gap-4 mt-2">
           <Info size={24} weight="fill" className="text-[#F5B301] shrink-0 mt-0.5" />
           <div className="flex flex-col gap-1">
@@ -163,10 +194,12 @@ export default function TambahJadwalPage() {
             Batal
           </Link>
           <button 
+            type="button"
             onClick={handleSave}
-            className="flex-1 py-4 flex items-center justify-center rounded-xl font-bold text-white bg-[#F5B301] hover:bg-[#dda101] transition-colors shadow-sm"
+            disabled={isSubmitting}
+            className="flex-1 py-4 flex items-center justify-center rounded-xl font-bold text-white bg-[#F5B301] hover:bg-[#dda101] transition-colors shadow-sm disabled:opacity-50"
           >
-            Simpan Slot Baru
+            {isSubmitting ? "Menyimpan Slot..." : "Simpan Slot Baru"}
           </button>
         </div>
 
