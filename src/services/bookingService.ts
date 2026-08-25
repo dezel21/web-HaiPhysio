@@ -50,10 +50,20 @@ export const bookingService = {
     return response.data;
   },
   
-  // 6. Ambil Daftar Layanan
+  // 6. Ambil Daftar Layanan (Focus Areas)
   getFocusAreas: async () => {
-    const response = await bookingApi.get("/focus-areas");
-    return response.data;
+    try {
+      const response = await bookingApi.get("/focus-areas");
+      return response.data;
+    } catch {
+      try {
+        const response = await bookingApi.get("/v1/booking/focus-areas");
+        return response.data;
+      } catch {
+        const response = await bookingApi.get("/booking/focus-areas");
+        return response.data;
+      }
+    }
   },
 
   // 7. Narik kotak-kotak ketersediaan jadwal terapis (per minggu)
