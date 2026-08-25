@@ -53,22 +53,21 @@ export default function Step1PilihLayanan({ onNext }: Step1Props) {
           {/* Loop data statis lu buat UI-nya */}
           {servicesData.map((staticService) => {
             
-            // Cocokin slug dari UI statis lu sama slug dari data API backend buat dapet UUID-nya
+            // Cocokin slug dari UI statis sama slug dari data API backend buat dapet UUID-nya
             const apiData = apiServices.find(api => api.slug === staticService.id);
-            const serviceUuid = apiData?.id; 
+            const serviceUuid = apiData?.id || apiData?.uuid || staticService.id; 
             
-            // Cek status terpilih pakai UUID dari database
+            // Cek status terpilih
             const isSelected = selectedId === serviceUuid;
 
             return (
               <div 
                 key={staticService.id}
-                onClick={() => serviceUuid && setSelectedId(serviceUuid)}
+                onClick={() => setSelectedId(serviceUuid)}
                 className={`flex flex-col rounded-[20px] p-8 cursor-pointer transition-all duration-300 border-2
                   ${isSelected 
                     ? "border-[#F5B301] bg-[#FFFBEA] shadow-[0_8px_24px_rgba(245,179,1,0.2)]" 
                     : "border-gray-100 bg-white hover:border-[#F5B301]/50 hover:bg-[#FFFBEA] hover:shadow-[0_8px_24px_rgba(245,179,1,0.15)]"}
-                  ${!serviceUuid ? "opacity-50 cursor-not-allowed pointer-events-none" : ""} 
                 `}
               >
                 
