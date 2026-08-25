@@ -54,12 +54,19 @@ export default function LoginForm() {
 
     try {
       // Nembak API Login
-      await authApi.post("/login", {
+      const res = await authApi.post("/login", {
         email: email,
         password: password,
       });
 
-      // Kalau sukses dapet cookie dari backend, langsung lempar ke halaman profil
+      // Simpan session token ke localStorage
+      const token = res.data?.session?.token || res.data?.token || res.data?.session_token || res.data?.accessToken || res.data?.data?.token || res.data?.data?.session?.token;
+      if (token) {
+        localStorage.setItem("session_token", token);
+        localStorage.setItem("token", token);
+      }
+
+      // Kalau sukses dapet cookie/token dari backend, langsung lempar ke halaman profil
       window.location.href = "/";
       
     } catch (error: any) {

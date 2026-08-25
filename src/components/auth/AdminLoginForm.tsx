@@ -51,12 +51,19 @@ export default function AdminLoginForm() {
 
     try {
       // 1. Nembak API Login khusus Admin
-      await authApi.post("/admin/login", {
+      const res = await authApi.post("/admin/login", {
         email: email.trim(),
         password: password,
       });
 
-      // 2. Sukses login admin -> Langsung lempar ke Dashboard Admin
+      // 2. Simpan session token ke localStorage untuk di-attach otomatis oleh interceptor
+      const token = res.data?.session?.token || res.data?.token || res.data?.session_token || res.data?.accessToken || res.data?.data?.token || res.data?.data?.session?.token;
+      if (token) {
+        localStorage.setItem("session_token", token);
+        localStorage.setItem("token", token);
+      }
+
+      // 3. Sukses login admin -> Langsung lempar ke Dashboard Admin
       window.location.href = "/admin";
     } catch (error: any) {
       console.error("Gagal login admin:", error);

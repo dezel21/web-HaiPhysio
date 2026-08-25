@@ -25,7 +25,21 @@ export const profileService = {
 
   // Fungsi buat logout (POST)
   logout: async () => {
-    const response = await authApi.post("/logout");
-    return response.data;
+    try {
+      const response = await authApi.post("/logout");
+      if (typeof window !== "undefined") {
+        localStorage.removeItem("session_token");
+        localStorage.removeItem("token");
+        localStorage.removeItem("auth_token");
+      }
+      return response.data;
+    } catch (error) {
+      if (typeof window !== "undefined") {
+        localStorage.removeItem("session_token");
+        localStorage.removeItem("token");
+        localStorage.removeItem("auth_token");
+      }
+      throw error;
+    }
   }
 };

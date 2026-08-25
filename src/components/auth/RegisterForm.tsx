@@ -98,7 +98,7 @@ export default function RegisterForm() {
 
     try {
       // Nembak API Register dengan format key sesuai permintaan backend
-      await authApi.post("/register", {
+      const res = await authApi.post("/register", {
         fullName: values.name,
         email: values.email,
         phone: values.phone,
@@ -108,7 +108,14 @@ export default function RegisterForm() {
         termsAgreement: agreed,
       });
 
-      // Kalau sukses, cookie otomatis kesimpen, user dilempar ke profil
+      // Simpan session token ke localStorage
+      const token = res.data?.session?.token || res.data?.token || res.data?.session_token || res.data?.accessToken || res.data?.data?.token || res.data?.data?.session?.token;
+      if (token) {
+        localStorage.setItem("session_token", token);
+        localStorage.setItem("token", token);
+      }
+
+      // Kalau sukses, user dilempar ke profil
       window.location.href = "/profil";
 
     } catch (error: any) {

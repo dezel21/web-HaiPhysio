@@ -12,4 +12,20 @@ export const bookingApi = axios.create({
   baseURL: process.env.NEXT_PUBLIC_BOOKING_API_URL || "http://localhost:8001/api",
   // Ini juga wajib true biar backend tau kita udah login
   withCredentials: true,
-});
+});
+
+// Interceptor pintar untuk menyisipkan header Authorization: Bearer <token> secara otomatis
+const attachAuthToken = (config: any) => {
+  if (typeof window !== "undefined") {
+    const token = localStorage.getItem("session_token") || localStorage.getItem("token") || localStorage.getItem("auth_token");
+    if (token) {
+      config.headers = config.headers || {};
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+  }
+  return config;
+};
+
+authApi.interceptors.request.use(attachAuthToken, (error) => Promise.reject(error));
+bookingApi.interceptors.request.use(attachAuthToken, (error) => Promise.reject(error));
+
