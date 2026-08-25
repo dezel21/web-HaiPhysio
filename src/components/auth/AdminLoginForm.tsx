@@ -56,11 +56,22 @@ export default function AdminLoginForm() {
         password: password,
       });
 
-      // 2. Simpan session token ke localStorage untuk di-attach otomatis oleh interceptor
-      const token = res.data?.session?.token || res.data?.token || res.data?.session_token || res.data?.accessToken || res.data?.data?.token || res.data?.data?.session?.token;
+      console.log("Response Login Admin dari Backend:", res.data);
+
+      // 2. Ekstraksi token dari berbagai kemungkinan struktur JSON response backend
+      let token = res.data?.token || res.data?.session?.token || res.data?.sessionToken || res.data?.session_token || res.data?.accessToken || res.data?.access_token || res.data?.data?.token || res.data?.data?.session?.token;
+      
+      if (!token && typeof res.data === "string") {
+        token = res.data;
+      }
+
       if (token) {
+        console.log("Token berhasil disimpan ke localStorage:", token);
         localStorage.setItem("session_token", token);
         localStorage.setItem("token", token);
+        localStorage.setItem("auth_token", token);
+      } else {
+        console.warn("PERINGATAN: Tidak ada token string yang ditemukan di response body login!", res.data);
       }
 
       // 3. Sukses login admin -> Langsung lempar ke Dashboard Admin
