@@ -21,9 +21,23 @@ export const adminService = {
       const response = await bookingApi.patch(url, { cancellation_reason: reason || "Dibatalkan oleh Admin" });
       return response.data;
     } else if (normalizedStatus === "selesai") {
-      url = `/bookings/${id}/complete`;
-      const response = await bookingApi.patch(url, {});
-      return response.data;
+      const completeEndpoints = [
+        `/admin/bookings/${id}/complete`,
+        `/v1/admin/bookings/${id}/complete`,
+        `/v1/bookings/${id}/complete`,
+        `/bookings/${id}/complete`
+      ];
+      let lastError = null;
+      for (const ep of completeEndpoints) {
+        try {
+          const response = await bookingApi.patch(ep, {});
+          return response.data;
+        } catch (err: any) {
+          lastError = err;
+          if (err.response?.status !== 404) throw err;
+        }
+      }
+      throw lastError;
     }
     
     const response = await bookingApi.patch(url, { status });
