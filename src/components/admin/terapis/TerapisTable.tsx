@@ -2,13 +2,13 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { MagnifyingGlass, CaretDown, DownloadSimple, PencilSimple, Bandaids, Brain, Barbell, CheckCircle, Users } from "@phosphor-icons/react";
+import { MagnifyingGlass, CaretDown, DownloadSimple, PencilSimple, Bandaids, Brain, Barbell, CheckCircle, Users, Trash, Warning } from "@phosphor-icons/react";
 import { adminService } from "@/services/adminService";
 
 interface TerapisTableProps {
   therapists: any[];
   isLoading: boolean;
-  onRefresh: () => void;
+  onRefresh: (background?: boolean) => void;
 }
 
 export default function TerapisTable({ therapists, isLoading, onRefresh }: TerapisTableProps) {
@@ -18,18 +18,22 @@ export default function TerapisTable({ therapists, isLoading, onRefresh }: Terap
   const [toastMessage, setToastMessage] = useState("");
   const [isToggling, setIsToggling] = useState<string | null>(null);
 
+  // State Delete Modal
+  const [deleteTarget, setDeleteTarget] = useState<any | null>(null);
+  const [isDeleting, setIsDeleting] = useState(false);
+
   // Pagination State
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 8;
 
   // Filter Data di Sisi Klien
   const filteredData = therapists.filter((t: any) => {
-    const nameMatch = (t.name || t.fullName || "").toLowerCase().includes(search.toLowerCase());
+    const nameMatch = (t.fullName || t.name || "").toLowerCase().includes(search.toLowerCase());
     const specMatch = (t.specialization || "").toLowerCase().includes(search.toLowerCase());
     const matchSearch = nameMatch || specMatch;
 
-    const matchService = serviceFilter 
-      ? (t.specialization || "").toLowerCase().includes(serviceFilter.toLowerCase())
+    const matchService = serviceFilter
+      ? (t.specializations?.[0]?.name || t.focuses?.[0]?.name || t.specialization || "").toLowerCase().includes(serviceFilter.toLowerCase())
       : true;
 
     return matchSearch && matchService;
@@ -40,21 +44,42 @@ export default function TerapisTable({ therapists, isLoading, onRefresh }: Terap
 
   // Toggle Status Aktif Terapis ke Backend API
   const handleToggle = async (t: any) => {
-    const currentActive = t.isActive !== false && t.is_active !== false;
+    // Backend mengembalikan status: "aktif" | "nonaktif" | "cuti"
+    const currentActive = t.status === "aktif" || (t.status === undefined && t.isActive !== false && t.is_active !== false);
     const newActive = !currentActive;
     setIsToggling(t.id);
 
     try {
-      await adminService.updateTherapist(t.id, { is_active: newActive });
-      setToastMessage(`Status ${t.name || "Terapis"} berhasil diubah menjadi ${newActive ? "Aktif" : "Nonaktif"}`);
+      await adminService.updateTherapist(t.id, { status: newActive ? "aktif" : "nonaktif" });
+      setToastMessage(`Status ${t.name || t.fullName || "Terapis"} berhasil diubah menjadi ${newActive ? "Aktif" : "Nonaktif"}`);
       setShowToast(true);
       setTimeout(() => setShowToast(false), 3000);
-      onRefresh();
+      onRefresh(true);
     } catch (error) {
       console.error("Gagal update status terapis:", error);
-      onRefresh();
+      onRefresh(true);
     } finally {
       setIsToggling(null);
+    }
+  };
+
+  // Hapus Permanen Terapis dari Database
+  const handleConfirmDelete = async () => {
+    if (!deleteTarget) return;
+    setIsDeleting(true);
+
+    try {
+      await adminService.deleteTherapist(deleteTarget.id);
+      setToastMessage(`Terapis ${deleteTarget.fullName || deleteTarget.name || "Terapis"} berhasil dihapus permanen dari database.`);
+      setShowToast(true);
+      setTimeout(() => setShowToast(false), 3000);
+      setDeleteTarget(null);
+      onRefresh(true);
+    } catch (error: any) {
+      console.error("Gagal menghapus terapis:", error);
+      alert(error.response?.data?.message || "Gagal menghapus data terapis.");
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -67,12 +92,12 @@ export default function TerapisTable({ therapists, isLoading, onRefresh }: Terap
 
     const headers = ["No", "ID Terapis", "Nama Terapis", "Spesialisasi", "Jadwal Praktek", "No Telepon", "Email", "Status"];
     const rows = filteredData.map((t, i) => {
-      const isActive = t.isActive !== false && t.is_active !== false;
+    const isActive = t.status === "aktif" || (t.status === undefined && t.isActive !== false && t.is_active !== false);
       return [
         i + 1,
         t.id,
-        `"${t.name || t.fullName || "-"}"`,
-        `"${t.specialization || "Fisioterapi"}"`,
+        `"${t.fullName || t.name || "-"}"`,
+        `"${t.specializations?.[0]?.name || t.focuses?.[0]?.name || t.specialization || "Fisioterapi"}"`,
         `"${t.scheduleDays || t.practiceSchedule || "Senin - Sabtu"}"`,
         `"${t.phone || "-"}"`,
         `"${t.email || "-"}"`,
@@ -80,10 +105,12 @@ export default function TerapisTable({ therapists, isLoading, onRefresh }: Terap
       ];
     });
 
-    const csvContent = "data:text/csv;charset=utf-8," + [headers.join(","), ...rows.map(r => r.join(","))].join("\n");
-    const encodedUri = encodeURI(csvContent);
+    const csvContent = "\uFEFF" + [headers.join(";"), ...rows.map(r => r.join(";"))].join("\n");
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    
     const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
+    link.setAttribute("href", url);
     link.setAttribute("download", `Data_Terapis_HaiPhysio_${new Date().toISOString().substring(0, 10)}.csv`);
     document.body.appendChild(link);
     link.click();
@@ -171,10 +198,11 @@ export default function TerapisTable({ therapists, isLoading, onRefresh }: Terap
               </thead>
               <tbody>
                 {paginatedData.map((row: any, index: number) => {
-                  const tName = row.name || row.fullName || "Fisioterapis";
+                  const tName = row.fullName || row.name || "Fisioterapis";
                   const sName = row.specialization || "Fisioterapi";
                   const schedule = row.scheduleDays || row.practiceSchedule || "Senin - Sabtu";
-                  const isActive = row.isActive !== false && row.is_active !== false;
+                  // Backend mengembalikan status: "aktif" | "nonaktif"
+                  const isActive = row.status === "aktif" || (row.status === undefined && row.isActive !== false && row.is_active !== false);
 
                   return (
                     <tr key={row.id} className="border-b border-gray-50 hover:bg-gray-50/50 transition-colors bg-white">
@@ -216,12 +244,23 @@ export default function TerapisTable({ therapists, isLoading, onRefresh }: Terap
                         </div>
                       </td>
                       <td className="py-5 px-6 text-center">
-                        <Link 
-                          href={`/admin/terapis/edit?id=${row.id}`} 
-                          className="inline-flex items-center justify-center gap-1.5 text-[#F5B301] hover:text-[#dda101] transition-colors font-bold text-[14px] px-3 py-1.5 rounded-lg hover:bg-yellow-50"
-                        >
-                          Edit <PencilSimple size={16} weight="bold" />
-                        </Link>
+                        <div className="flex items-center justify-center gap-1.5">
+                          <Link 
+                            href={`/admin/terapis/edit?id=${row.id}`} 
+                            className="inline-flex items-center justify-center gap-1 text-[#F5B301] hover:text-[#dda101] transition-colors font-bold text-[13px] px-2.5 py-1.5 rounded-lg hover:bg-yellow-50"
+                          >
+                            <PencilSimple size={15} weight="bold" />
+                            Edit
+                          </Link>
+                          <button
+                            onClick={() => setDeleteTarget(row)}
+                            className="inline-flex items-center justify-center gap-1 text-red-500 hover:text-red-700 transition-colors font-bold text-[13px] px-2.5 py-1.5 rounded-lg hover:bg-red-50"
+                            title="Hapus / Nonaktifkan Terapis"
+                          >
+                            <Trash size={15} weight="bold" />
+                            Hapus
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   );
@@ -275,6 +314,46 @@ export default function TerapisTable({ therapists, isLoading, onRefresh }: Terap
         <div className="fixed bottom-10 left-1/2 -translate-x-1/2 flex items-center gap-2 bg-[#ecfdf3] border border-[#a6f4c5] text-[#027a48] px-6 py-3 rounded-full shadow-[0_8px_30px_rgba(2,122,72,0.1)] z-50 animate-in slide-in-from-bottom-5 duration-300">
           <CheckCircle size={20} weight="fill" />
           <span className="text-[14px] font-bold">{toastMessage}</span>
+        </div>
+      )}
+
+      {/* Modal Konfirmasi Hapus */}
+      {deleteTarget && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl max-w-md w-full p-6 shadow-2xl flex flex-col gap-5 animate-in zoom-in-95 duration-200">
+            <div className="flex items-center gap-3 text-red-600">
+              <div className="w-12 h-12 rounded-full bg-red-50 flex items-center justify-center shrink-0 border border-red-100">
+                <Warning size={26} weight="fill" className="text-red-500" />
+              </div>
+              <div className="flex flex-col">
+                <h3 className="text-[17px] font-bold text-[#1b2a4e]">Hapus Permanen Data Terapis</h3>
+                <p className="text-[12px] text-gray-400">Data terapis akan dihapus selamanya dari database.</p>
+              </div>
+            </div>
+
+            <p className="text-[14px] text-[#585858] leading-relaxed">
+              Apakah Anda yakin ingin menghapus data <strong className="text-[#1b2a4e]">{deleteTarget.fullName || deleteTarget.name}</strong> secara permanen?
+            </p>
+
+            <div className="flex justify-end items-center gap-3 pt-2">
+              <button
+                type="button"
+                onClick={() => setDeleteTarget(null)}
+                disabled={isDeleting}
+                className="px-5 py-2.5 rounded-xl border border-gray-200 text-gray-600 font-bold text-[13px] hover:bg-gray-50 transition-colors disabled:opacity-50"
+              >
+                Batal
+              </button>
+              <button
+                type="button"
+                onClick={handleConfirmDelete}
+                disabled={isDeleting}
+                className="px-5 py-2.5 rounded-xl bg-red-600 text-white font-bold text-[13px] hover:bg-red-700 transition-colors shadow-sm disabled:opacity-50 flex items-center gap-2"
+              >
+                {isDeleting ? "Menghapus..." : "Ya, Hapus Permanen"}
+              </button>
+            </div>
+          </div>
         </div>
       )}
 

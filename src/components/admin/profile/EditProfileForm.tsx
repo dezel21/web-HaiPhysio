@@ -1,23 +1,21 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { CheckCircle, Key, Lock } from "@phosphor-icons/react";
+import { CheckCircle } from "@phosphor-icons/react";
 import { profileService } from "@/services/profileService";
-import ModalGantiPassword from "@/components/profile/ModalGantiPassword";
 
 export default function EditProfileForm() {
   const [isEditing, setIsEditing] = useState(false);
   const [showToast, setShowToast] = useState(false);
+  const [toastType, setToastType] = useState<"success" | "error">("success");
+  const [toastMsg, setToastMsg] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
-  const [isPasswordModalOpen, setIsPasswordModalOpen] = useState(false);
 
   const [formData, setFormData] = useState({
     fullName: "",
-    email: "", 
+    email: "",
     phone: "",
-    department: "Administration & Operations",
-    address: "Jl. Condet Raya No. 45, Jakarta Timur, DKI Jakarta",
   });
 
   // Tarik data profil admin asli dari database saat halaman dibuka
@@ -46,22 +44,38 @@ export default function EditProfileForm() {
 
   // Simpan perubahan nama ke API Backend
   const handleSave = async () => {
+    if (!formData.fullName.trim() || formData.fullName.trim().length < 3) {
+      setToastType("error");
+      setToastMsg("Nama lengkap minimal 3 karakter.");
+      setShowToast(true);
+      setTimeout(() => setShowToast(false), 3500);
+      return;
+    }
     setIsSaving(true);
     try {
+      // Backend hanya mendukung full_name di PATCH /profile
       await profileService.updateProfile({
-        full_name: formData.fullName,
+        full_name: formData.fullName.trim(),
       });
 
       setIsEditing(false);
+      setToastType("success");
+      setToastMsg("Profil Admin Berhasil Diperbarui!");
       setShowToast(true);
 
       // Beritahu komponen AdminHeader agar namanya langsung sinkron berubah
       window.dispatchEvent(new Event("adminProfileUpdated"));
 
       setTimeout(() => setShowToast(false), 3000);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Gagal update profil admin:", error);
-      alert("Gagal menyimpan perubahan. Pastikan nama minimal 3 karakter.");
+      const msg = error?.response?.data?.error?.message
+        || error?.response?.data?.message
+        || "Gagal menyimpan perubahan. Coba lagi.";
+      setToastType("error");
+      setToastMsg(msg);
+      setShowToast(true);
+      setTimeout(() => setShowToast(false), 4000);
     } finally {
       setIsSaving(false);
     }
@@ -120,14 +134,6 @@ export default function EditProfileForm() {
           <h4 className="text-[18px] font-bold text-[#1b2a4e]">Personal Details</h4>
           
           <div className="flex items-center gap-3">
-            {/* Tombol Ganti Password */}
-            <button
-              onClick={() => setIsPasswordModalOpen(true)}
-              className="px-4 py-2 rounded-xl font-bold text-[#1b2a4e] border border-gray-200 hover:bg-gray-50 transition-colors text-[13px] flex items-center gap-2"
-            >
-              <Lock size={16} weight="bold" />
-              Ganti Kata Sandi
-            </button>
 
             {isEditing ? (
               <div className="flex gap-2">
@@ -186,34 +192,34 @@ export default function EditProfileForm() {
 
           {/* Phone Number */}
           <div className="flex flex-col gap-2">
-            <label className="text-[14px] font-medium text-[#1b2a4e]">Phone Number</label>
+            <label className="text-[14px] font-medium text-[#1b2a4e]">Phone Number {isEditing && <span className="text-gray-400 font-normal">(Opsional)</span>}</label>
             <input 
               type="text" 
               name="phone" 
               value={formData.phone} 
-              disabled
-              className="w-full p-3.5 rounded-xl border border-gray-100 bg-gray-50 text-gray-400 cursor-not-allowed text-[14px]"
+              onChange={handleChange}
+              disabled={!isEditing}
+              placeholder={isEditing ? "Contoh: 08123456789" : "-"}
+              className={`w-full p-3.5 rounded-xl border outline-none transition-colors text-[14px] ${isEditing ? "border-[#F5B301] bg-white text-[#1b2a4e] font-bold" : "border-gray-100 bg-gray-50 text-gray-500 cursor-not-allowed"}`}
             />
           </div>
 
-          {/* Department */}
+          {/* Department — info statis */}
           <div className="flex flex-col gap-2">
             <label className="text-[14px] font-medium text-[#1b2a4e]">Department</label>
             <input 
               type="text" 
-              name="department" 
-              value={formData.department} 
+              value="Administration & Operations"
               disabled
               className="w-full p-3.5 rounded-xl border border-gray-100 bg-gray-50 text-gray-400 cursor-not-allowed text-[14px]"
             />
           </div>
 
-          {/* Residential Address */}
+          {/* Clinic Address — info statis */}
           <div className="flex flex-col gap-2 md:col-span-2">
             <label className="text-[14px] font-medium text-[#1b2a4e]">Clinic Address</label>
             <textarea 
-              name="address" 
-              value={formData.address} 
+              value="Jl. Condet Raya No. 45, Jakarta Timur, DKI Jakarta"
               disabled 
               rows={2}
               className="w-full p-3.5 rounded-xl border border-gray-100 bg-gray-50 text-gray-400 cursor-not-allowed text-[14px] resize-none"
@@ -222,19 +228,17 @@ export default function EditProfileForm() {
         </div>
       </div>
 
-      {/* --- TOAST NOTIFIKASI SUKSES --- */}
+      {/* --- TOAST NOTIFIKASI SUKSES / GAGAL --- */}
       {showToast && (
-        <div className="fixed bottom-10 left-1/2 -translate-x-1/2 flex items-center gap-2 bg-[#ecfdf3] border border-[#a6f4c5] text-[#027a48] px-6 py-3 rounded-full shadow-[0_8px_30px_rgba(2,122,72,0.1)] z-50 animate-bounce">
+        <div className={`fixed bottom-10 left-1/2 -translate-x-1/2 flex items-center gap-2 px-6 py-3 rounded-full shadow-lg z-50 animate-bounce border ${
+          toastType === "success"
+            ? "bg-[#ecfdf3] border-[#a6f4c5] text-[#027a48]"
+            : "bg-red-50 border-red-200 text-red-600"
+        }`}>
           <CheckCircle size={20} weight="fill" />
-          <span className="text-[14px] font-bold">Profil Admin Berhasil Diperbarui</span>
+          <span className="text-[14px] font-bold">{toastMsg}</span>
         </div>
       )}
-
-      {/* Modal Ganti Password */}
-      <ModalGantiPassword
-        isOpen={isPasswordModalOpen}
-        onClose={() => setIsPasswordModalOpen(false)}
-      />
 
     </div>
   );

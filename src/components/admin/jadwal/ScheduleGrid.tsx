@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { CalendarBlank, Trash, CheckCircle, CalendarX, Sparkle } from "@phosphor-icons/react";
+import { CalendarBlank, Trash, CheckCircle, CalendarX, Sparkle, WarningCircle, CheckSquare, Square, ToggleLeft, Power } from "@phosphor-icons/react";
 import { adminService } from "@/services/adminService";
 
 interface ScheduleGridProps {
@@ -14,22 +14,92 @@ interface ScheduleGridProps {
 export default function ScheduleGrid({ slots, isLoading, onRefresh, onOpenGenerateModal }: ScheduleGridProps) {
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [slotToDelete, setSlotToDelete] = useState<string | number | null>(null);
-  const [showToast, setShowToast] = useState(false);
-  const [toastMessage, setToastMessage] = useState("");
+  const [toast, setToast] = useState<{ message: string; type: "success" | "error" | "warning" } | null>(null);
   const [isToggling, setIsToggling] = useState<string | number | null>(null);
 
-  // Toggle Aktif / Nonaktif Slot ke API
-  const handleToggle = async (slotId: string | number) => {
+  // === BULK SELECT STATE ===
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [isBulkMode, setIsBulkMode] = useState(false);
+  const [isBulkProcessing, setIsBulkProcessing] = useState(false);
+  const [isBulkDeleteModalOpen, setIsBulkDeleteModalOpen] = useState(false);
+
+  const showNotification = (message: string, type: "success" | "error" | "warning" = "success") => {
+    setToast({ message, type });
+    setTimeout(() => setToast(null), 3000);
+  };
+
+  // === BULK HANDLERS ===
+  const toggleSelectAll = () => {
+    if (selectedIds.size === slots.length) {
+      setSelectedIds(new Set());
+    } else {
+      setSelectedIds(new Set(slots.map((s) => String(s.id))));
+    }
+  };
+
+  const toggleSelectOne = (id: string) => {
+    const next = new Set(selectedIds);
+    if (next.has(id)) next.delete(id);
+    else next.add(id);
+    setSelectedIds(next);
+  };
+
+  const exitBulkMode = () => {
+    setIsBulkMode(false);
+    setSelectedIds(new Set());
+  };
+
+  const handleBulkDelete = async () => {
+    setIsBulkProcessing(true);
+    let successCount = 0;
+    let failCount = 0;
+    for (const id of selectedIds) {
+      try {
+        await adminService.deleteSlot(id);
+        successCount++;
+      } catch {
+        failCount++;
+      }
+    }
+    setIsBulkDeleteModalOpen(false);
+    exitBulkMode();
+    onRefresh();
+    if (failCount === 0) showNotification(`${successCount} slot berhasil dihapus`, "success");
+    else showNotification(`${successCount} berhasil, ${failCount} gagal dihapus`, "warning");
+    setIsBulkProcessing(false);
+  };
+
+  const handleBulkToggle = async (activate: boolean) => {
+    setIsBulkProcessing(true);
+    let successCount = 0;
+    let failCount = 0;
+    for (const id of selectedIds) {
+      try {
+        await adminService.toggleSlot(id, activate);
+        successCount++;
+      } catch {
+        failCount++;
+      }
+    }
+    exitBulkMode();
+    onRefresh();
+    const action = activate ? "diaktifkan" : "dinonaktifkan";
+    if (failCount === 0) showNotification(`${successCount} slot berhasil ${action}`, "success");
+    else showNotification(`${successCount} berhasil, ${failCount} gagal ${action}`, "warning");
+    setIsBulkProcessing(false);
+  };
+
+  // === SINGLE HANDLERS ===
+  const handleToggle = async (slotId: string | number, isActive: boolean) => {
     setIsToggling(slotId);
+    const targetStatus = !isActive; // flip: kalau aktif → nonaktifkan, kalau off → aktifkan
     try {
-      await adminService.toggleSlot(String(slotId));
-      setToastMessage("Status slot berhasil diperbarui");
-      setShowToast(true);
-      setTimeout(() => setShowToast(false), 3000);
+      await adminService.toggleSlot(String(slotId), targetStatus);
+      showNotification(`Status slot berhasil ${targetStatus ? "diaktifkan" : "dinonaktifkan"}`);
       onRefresh();
-    } catch (error) {
-      console.error("Gagal toggle status slot:", error);
-      // Tetap refresh data
+    } catch (error: any) {
+      console.error("Gagal toggle status slot:", error.response?.data || error);
+      showNotification("Gagal mengubah status slot", "error");
       onRefresh();
     } finally {
       setIsToggling(null);
@@ -44,20 +114,20 @@ export default function ScheduleGrid({ slots, isLoading, onRefresh, onOpenGenera
   const confirmDelete = async () => {
     if (slotToDelete !== null) {
       try {
-        await adminService.toggleSlot(String(slotToDelete)); // Nonaktifkan slot
+        await adminService.deleteSlot(String(slotToDelete));
         setIsDeleteModalOpen(false);
         setSlotToDelete(null);
-        setToastMessage("Slot jadwal berhasil dinonaktifkan");
-        setShowToast(true);
-        setTimeout(() => setShowToast(false), 3000);
+        showNotification("Slot jadwal berhasil dihapus");
         onRefresh();
       } catch (error) {
-        console.error("Gagal menonaktifkan slot:", error);
+        console.error("Gagal menghapus slot:", error);
         setIsDeleteModalOpen(false);
+        showNotification("Gagal menghapus slot jadwal", "error");
       }
     }
   };
 
+  // === LOADING & EMPTY STATE ===
   if (isLoading) {
     return (
       <div className="w-full py-20 flex flex-col items-center justify-center text-center">
@@ -89,13 +159,92 @@ export default function ScheduleGrid({ slots, isLoading, onRefresh, onOpenGenera
     );
   }
 
+  const allSelected = selectedIds.size === slots.length && slots.length > 0;
+  const someSelected = selectedIds.size > 0 && !allSelected;
+
   return (
     <>
+      {/* === BULK SELECT TOOLBAR === */}
+      <div className="flex items-center justify-between mb-4 gap-3 flex-wrap">
+        <div className="flex items-center gap-3">
+          {!isBulkMode ? (
+            <button
+              onClick={() => setIsBulkMode(true)}
+              className="flex items-center gap-2 px-4 py-2 text-[13px] font-bold text-[#1b2a4e] bg-white border border-gray-200 hover:border-[#1b2a4e] rounded-xl transition-all shadow-sm"
+            >
+              <CheckSquare size={18} />
+              Pilih Massal
+            </button>
+          ) : (
+            <div className="flex items-center gap-2 flex-wrap">
+              {/* Checkbox Pilih Semua */}
+              <button
+                onClick={toggleSelectAll}
+                className="flex items-center gap-2 px-4 py-2 text-[13px] font-bold text-[#1b2a4e] bg-white border border-gray-200 hover:border-[#1b2a4e] rounded-xl transition-all shadow-sm"
+              >
+                {allSelected ? (
+                  <CheckSquare size={18} weight="fill" className="text-[#F5B301]" />
+                ) : someSelected ? (
+                  <CheckSquare size={18} weight="duotone" className="text-[#F5B301]" />
+                ) : (
+                  <Square size={18} className="text-gray-400" />
+                )}
+                {allSelected ? "Batal Semua" : "Pilih Semua"}
+              </button>
+
+              {/* Aksi Bulk (muncul kalau ada yang dipilih) */}
+              {selectedIds.size > 0 && (
+                <>
+                  <span className="text-[13px] font-bold text-[#1b2a4e] px-2">
+                    {selectedIds.size} dipilih
+                  </span>
+                  <button
+                    onClick={() => handleBulkToggle(true)}
+                    disabled={isBulkProcessing}
+                    className="flex items-center gap-1.5 px-4 py-2 text-[13px] font-bold text-white bg-[#22c55e] hover:bg-green-600 rounded-xl transition-colors shadow-sm disabled:opacity-50"
+                  >
+                    <Power size={16} weight="bold" />
+                    Aktifkan
+                  </button>
+                  <button
+                    onClick={() => handleBulkToggle(false)}
+                    disabled={isBulkProcessing}
+                    className="flex items-center gap-1.5 px-4 py-2 text-[13px] font-bold text-[#585858] bg-gray-100 hover:bg-gray-200 rounded-xl transition-colors shadow-sm disabled:opacity-50"
+                  >
+                    <ToggleLeft size={16} weight="bold" />
+                    Nonaktifkan
+                  </button>
+                  <button
+                    onClick={() => setIsBulkDeleteModalOpen(true)}
+                    disabled={isBulkProcessing}
+                    className="flex items-center gap-1.5 px-4 py-2 text-[13px] font-bold text-white bg-red-500 hover:bg-red-600 rounded-xl transition-colors shadow-sm disabled:opacity-50"
+                  >
+                    <Trash size={16} weight="bold" />
+                    Hapus
+                  </button>
+                </>
+              )}
+
+              <button
+                onClick={exitBulkMode}
+                className="px-3 py-2 text-[13px] font-bold text-gray-500 bg-white border border-gray-200 hover:bg-gray-50 rounded-xl transition-colors"
+              >
+                Selesai
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* === GRID KARTU SLOT === */}
       <div className="w-full grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 relative z-0">
         {slots.map((slot: any) => {
-          const isBooked = slot.is_booked || slot.isBooked;
-          const isActive = slot.isActive !== false && slot.is_active !== false;
-          
+          const isBooked = (slot.bookedCount ?? 0) > 0 || slot.is_booked || slot.isBooked;
+          // Backend mengembalikan status: "aktif" | "nonaktif"
+          const isActive = slot.status === "aktif" || (slot.status === undefined && slot.isActive !== false && slot.is_active !== false);
+          const slotIdStr = String(slot.id);
+          const isSelected = selectedIds.has(slotIdStr);
+
           const timeDisplay = slot.time || `${(slot.startTime || slot.start_time || "").substring(0, 5)} - ${(slot.endTime || slot.end_time || "").substring(0, 5)}`;
           const therapistName = slot.therapistName || slot.therapist?.name;
 
@@ -105,7 +254,7 @@ export default function ScheduleGrid({ slots, isLoading, onRefresh, onOpenGenera
           let cardBg = "bg-white border-gray-200";
 
           if (isBooked) {
-            statusLabel = "Tidak Tersedia";
+            statusLabel = "Terisi Pasien";
             badgeStyle = "bg-gray-100 text-gray-400 border border-gray-200";
             dotStyle = "bg-gray-400";
             cardBg = "bg-[#FFFBEA] border-[#fdeeb3]";
@@ -116,9 +265,26 @@ export default function ScheduleGrid({ slots, isLoading, onRefresh, onOpenGenera
             cardBg = "bg-gray-50/70 border-gray-200 opacity-75";
           }
 
+          if (isSelected) {
+            cardBg = "bg-yellow-50 border-[#F5B301] ring-2 ring-[#F5B301]/30";
+          }
+
           return (
-            <div key={slot.id} className={`flex flex-col rounded-2xl border p-5 transition-all shadow-sm ${cardBg}`}>
-              
+            <div
+              key={slot.id}
+              className={`flex flex-col rounded-2xl border p-5 transition-all shadow-sm ${cardBg} ${isBulkMode ? "cursor-pointer select-none" : ""}`}
+              onClick={() => isBulkMode && toggleSelectOne(slotIdStr)}
+            >
+              {/* Checkbox (hanya di bulk mode) */}
+              {isBulkMode && (
+                <div className="flex justify-end mb-2">
+                  {isSelected
+                    ? <CheckSquare size={22} weight="fill" className="text-[#F5B301]" />
+                    : <Square size={22} className="text-gray-300" />
+                  }
+                </div>
+              )}
+
               <div className="flex justify-between items-start mb-2">
                 <div className="flex flex-col">
                   <span className="text-[19px] font-bold text-[#1b2a4e] leading-tight">
@@ -142,67 +308,95 @@ export default function ScheduleGrid({ slots, isLoading, onRefresh, onOpenGenera
 
               <div className="w-full h-[1px] bg-gray-200 mb-4"></div>
 
-              <div className="flex justify-between items-center">
-                
-                {/* Switch Toggle Aktif/Off */}
-                <div 
-                  onClick={() => !isBooked && handleToggle(slot.id)} 
-                  className={`flex items-center gap-2 ${isBooked ? "cursor-not-allowed opacity-50" : "cursor-pointer group"}`}
-                >
-                  <div className={`w-10 h-6 rounded-full p-1 transition-colors flex items-center ${isActive ? 'bg-[#22c55e]' : 'bg-gray-300'}`}>
-                    <div className={`w-4 h-4 bg-white rounded-full shadow-md transition-transform ${isActive ? 'translate-x-4' : 'translate-x-0'}`}></div>
+              {/* Aksi Individual (sembunyikan saat bulk mode) */}
+              {!isBulkMode && (
+                <div className="flex justify-between items-center">
+                  {/* Switch Toggle Aktif/Off */}
+                  <div
+                    onClick={(e) => { e.stopPropagation(); !isBooked && !isToggling && handleToggle(slot.id, isActive); }}
+                    className={`flex items-center gap-2 ${isBooked ? "cursor-not-allowed opacity-50" : "cursor-pointer group"}`}
+                  >
+                    <div className={`w-10 h-6 rounded-full p-1 transition-colors flex items-center ${isActive ? 'bg-[#22c55e]' : 'bg-gray-300'}`}>
+                      <div className={`w-4 h-4 bg-white rounded-full shadow-md transition-transform ${isActive ? 'translate-x-4' : 'translate-x-0'}`}></div>
+                    </div>
+                    <span className={`text-[13px] font-bold ${isActive ? 'text-[#22c55e]' : 'text-gray-400'}`}>
+                      {isActive ? 'Aktif' : 'Off'}
+                    </span>
                   </div>
-                  <span className={`text-[13px] font-bold ${isActive ? 'text-[#22c55e]' : 'text-gray-400'}`}>
-                    {isActive ? 'Aktif' : 'Off'}
-                  </span>
-                </div>
 
-                {/* Tombol Nonaktifkan Slot */}
-                <button 
-                  onClick={() => handleDeleteClick(slot.id)} 
-                  disabled={isBooked}
-                  className="text-red-400 hover:text-red-600 transition-colors p-1 disabled:opacity-30 disabled:cursor-not-allowed"
-                  title="Nonaktifkan Slot"
-                >
-                  <Trash size={18} weight="fill" />
-                </button>
-              </div>
-              
+                  {/* Tombol Hapus Slot */}
+                  <button
+                    onClick={(e) => { e.stopPropagation(); handleDeleteClick(slot.id); }}
+                    disabled={isBooked}
+                    className="text-red-400 hover:text-red-600 transition-colors p-1 disabled:opacity-30 disabled:cursor-not-allowed"
+                    title="Hapus Slot Jadwal"
+                  >
+                    <Trash size={18} weight="fill" />
+                  </button>
+                </div>
+              )}
+
             </div>
           );
         })}
       </div>
 
-      {/* Modal Konfirmasi Hapus/Nonaktif */}
+      {/* === MODAL KONFIRMASI HAPUS SINGLE === */}
       {isDeleteModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-[2px]">
           <div className="bg-white rounded-3xl p-8 max-w-[400px] w-full flex flex-col items-center text-center shadow-2xl animate-in zoom-in-95 duration-200">
-            <h3 className="text-[20px] font-bold text-[#1b2a4e] mb-2">Nonaktifkan Slot?</h3>
-            <p className="text-[14px] text-gray-500 mb-8">Slot jadwal ini tidak akan dapat dipesan oleh pasien.</p>
-            
+            <h3 className="text-[20px] font-bold text-[#1b2a4e] mb-2">Hapus Slot Jadwal?</h3>
+            <p className="text-[14px] text-gray-500 mb-8">Slot jadwal ini akan dihapus permanen dari sistem.</p>
             <div className="flex gap-4 w-full">
-              <button 
-                onClick={() => setIsDeleteModalOpen(false)}
-                className="flex-1 py-3 rounded-xl font-bold text-[#585858] bg-gray-50 hover:bg-gray-100 border border-gray-200 transition-colors"
+              <button onClick={() => setIsDeleteModalOpen(false)} className="flex-1 py-3 rounded-xl font-bold text-[#585858] bg-gray-50 hover:bg-gray-100 border border-gray-200 transition-colors">Batal</button>
+              <button onClick={confirmDelete} className="flex-1 py-3 rounded-xl font-bold text-white bg-[#e02424] hover:bg-red-700 transition-colors shadow-md shadow-red-500/20">Hapus</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* === MODAL KONFIRMASI HAPUS BULK === */}
+      {isBulkDeleteModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-[2px]">
+          <div className="bg-white rounded-3xl p-8 max-w-[420px] w-full flex flex-col items-center text-center shadow-2xl animate-in zoom-in-95 duration-200">
+            <div className="w-14 h-14 rounded-full bg-red-50 flex items-center justify-center mb-4">
+              <Trash size={28} weight="fill" className="text-red-500" />
+            </div>
+            <h3 className="text-[20px] font-bold text-[#1b2a4e] mb-2">Hapus {selectedIds.size} Slot?</h3>
+            <p className="text-[14px] text-gray-500 mb-8">Seluruh slot yang dipilih akan dihapus permanen dan tidak dapat dikembalikan.</p>
+            <div className="flex gap-4 w-full">
+              <button
+                onClick={() => setIsBulkDeleteModalOpen(false)}
+                disabled={isBulkProcessing}
+                className="flex-1 py-3 rounded-xl font-bold text-[#585858] bg-gray-50 hover:bg-gray-100 border border-gray-200 transition-colors disabled:opacity-50"
               >
                 Batal
               </button>
-              <button 
-                onClick={confirmDelete}
-                className="flex-1 py-3 rounded-xl font-bold text-white bg-[#e02424] hover:bg-red-700 transition-colors shadow-md shadow-red-500/20"
+              <button
+                onClick={handleBulkDelete}
+                disabled={isBulkProcessing}
+                className="flex-1 py-3 rounded-xl font-bold text-white bg-[#e02424] hover:bg-red-700 transition-colors shadow-md shadow-red-500/20 disabled:opacity-50"
               >
-                Nonaktifkan
+                {isBulkProcessing ? "Menghapus..." : `Hapus ${selectedIds.size} Slot`}
               </button>
             </div>
           </div>
         </div>
       )}
 
-      {/* Toast Notifikasi */}
-      {showToast && (
-        <div className="fixed bottom-10 left-1/2 -translate-x-1/2 flex items-center gap-2 bg-[#ecfdf3] border border-[#a6f4c5] text-[#027a48] px-6 py-3 rounded-full shadow-[0_8px_30px_rgba(2,122,72,0.1)] z-50 animate-in slide-in-from-bottom-5 duration-300">
-          <CheckCircle size={20} weight="fill" />
-          <span className="text-[14px] font-bold">{toastMessage}</span>
+      {/* === TOAST NOTIFIKASI === */}
+      {toast && (
+        <div className={`fixed bottom-10 left-1/2 -translate-x-1/2 flex items-center gap-2 px-6 py-3 rounded-full shadow-[0_8px_30px_rgba(0,0,0,0.12)] z-50 animate-in slide-in-from-bottom-5 duration-300 border
+          ${toast.type === "success"
+            ? "bg-[#ecfdf3] border-[#a6f4c5] text-[#027a48]"
+            : toast.type === "warning"
+            ? "bg-[#fffbeb] border-[#fde68a] text-[#b45309]"
+            : "bg-[#fef3f2] border-[#fecdca] text-[#b42318]"
+          }`}
+        >
+          {toast.type === "success" && <CheckCircle size={20} weight="fill" />}
+          {(toast.type === "warning" || toast.type === "error") && <WarningCircle size={20} weight="fill" />}
+          <span className="text-[14px] font-bold">{toast.message}</span>
         </div>
       )}
     </>

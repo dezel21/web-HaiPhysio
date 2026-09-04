@@ -15,6 +15,7 @@ function DetailPasienContent() {
   const [patient, setPatient] = useState<any>(null);
   const [patientBookings, setPatientBookings] = useState<any[]>([]);
   const [isEditing, setIsEditing] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [showToast, setShowToast] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -37,9 +38,14 @@ function DetailPasienContent() {
         const allPatients = patientsRes.data?.patients || patientsRes.patients || [];
         const allBookings = bookingsRes.data?.bookings || bookingsRes.bookings || [];
 
-        // Cari pasien yang sesuai
+        // Cari pasien yang sesuai berdasarkan ID, Kode, Telepon, atau Nama
         const targetPatient = patientId 
-          ? allPatients.find((p: any) => String(p.id) === String(patientId))
+          ? allPatients.find((p: any) => 
+              String(p.id) === String(patientId) || 
+              String(p.patientCode || p.code || "").toLowerCase() === String(patientId).toLowerCase() ||
+              (p.phone && p.phone === patientId) ||
+              ((p.name || p.fullName || "").toLowerCase() === decodeURIComponent(patientId).toLowerCase())
+            )
           : allPatients[0];
 
         setPatient(targetPatient || null);
@@ -51,11 +57,16 @@ function DetailPasienContent() {
             tglLahir: targetPatient.birthDate || targetPatient.tglLahir || "12 Maret 1990",
           });
 
-          // Filter booking milik pasien ini
-          const pName = (targetPatient.name || targetPatient.fullName || "").toLowerCase();
+          // Filter booking milik pasien ini secara akurat
+          const pName = (targetPatient.name || targetPatient.fullName || "").toLowerCase().trim();
+          const pPhone = (targetPatient.phone || "").replace(/\D/g, "");
           const targetBookings = allBookings.filter((b: any) => {
-            const bName = (b.patientName || b.patient_name || "").toLowerCase();
-            return bName === pName || (b.patientId && String(b.patientId) === String(targetPatient.id));
+            const bName = (b.patientName || b.patient_name || "").toLowerCase().trim();
+            const bPhone = (b.patientPhone || b.patient_phone || "").replace(/\D/g, "");
+            const matchId = b.patientId && String(b.patientId) === String(targetPatient.id);
+            const matchName = bName && pName && bName === pName;
+            const matchPhone = bPhone && pPhone && bPhone === pPhone;
+            return matchId || matchName || matchPhone;
           });
 
           setPatientBookings(targetBookings);
@@ -70,17 +81,37 @@ function DetailPasienContent() {
     fetchData();
   }, [patientId]);
 
-  const handleEditToggle = () => {
+  const handleEditToggle = async () => {
     if (isEditing) {
-      setIsEditing(false);
-      setShowToast(true);
-      setTimeout(() => setShowToast(false), 3000);
+      if (patient) {
+        setIsSaving(true);
+        try {
+          await adminService.updatePatient(patient.id, {
+            phone: formData.telepon,
+            email: formData.email,
+            birthDate: formData.tglLahir
+          });
+          
+          setPatient({ ...patient, phone: formData.telepon, email: formData.email, birthDate: formData.tglLahir });
+          setIsEditing(false);
+          setShowToast(true);
+          setTimeout(() => setShowToast(false), 3000);
+        } catch (error) {
+          console.error("Gagal menyimpan data pasien:", error);
+          alert("Gagal menyimpan data pasien. Silakan coba lagi.");
+        } finally {
+          setIsSaving(false);
+        }
+      } else {
+        setIsEditing(false);
+      }
     } else {
       setIsEditing(true);
     }
   };
 
   const renderLayananIcon = (layanan: string) => {
+    if (!layanan) return <Bandaids size={14} weight="bold" />;
     if (layanan.toLowerCase().includes("neuro")) return <Brain size={14} weight="bold" />;
     if (layanan.toLowerCase().includes("olahraga")) return <Barbell size={14} weight="bold" />;
     return <Bandaids size={14} weight="bold" />;
@@ -94,9 +125,15 @@ function DetailPasienContent() {
     if (status === "selesai") {
       label = "Selesai";
       colorClass = "border-gray-300 text-gray-500 bg-gray-50";
-    } else if (status === "dibatalkan") {
+    } else if (status === "dibatalkan" || status === "batal" || status === "cancel") {
       label = "Dibatalkan";
       colorClass = "border-red-300 text-red-500 bg-red-50/40";
+    } else if (status === "tidak_hadir" || status === "tidak hadir") {
+      label = "Tidak Hadir";
+      colorClass = "border-orange-300 text-orange-500 bg-orange-50/40";
+    } else if (status === "tertunda" || status === "menunggu" || status === "pending") {
+      label = "Menunggu Konfirmasi";
+      colorClass = "border-yellow-300 text-yellow-600 bg-yellow-50/40";
     }
 
     return (
@@ -150,13 +187,14 @@ function DetailPasienContent() {
 
         <button 
           onClick={handleEditToggle}
+          disabled={isSaving}
           className={`px-6 py-2.5 rounded-xl font-bold text-[14px] transition-colors border shadow-sm shrink-0 ${
             isEditing 
-              ? 'bg-[#F5B301] text-white border-[#F5B301] hover:bg-[#dda101]' 
+              ? 'bg-[#F5B301] text-white border-[#F5B301] hover:bg-[#dda101] disabled:opacity-70' 
               : 'bg-white text-[#1b2a4e] border-gray-200 hover:bg-gray-50'
           }`}
         >
-          {isEditing ? 'Simpan Data' : 'Edit Kontak'}
+          {isSaving ? 'Menyimpan...' : isEditing ? 'Simpan Data' : 'Edit Kontak'}
         </button>
       </div>
 
@@ -200,7 +238,7 @@ function DetailPasienContent() {
               <span className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">Tanggal Lahir</span>
               {isEditing ? (
                 <input 
-                  type="text" 
+                  type="date" 
                   value={formData.tglLahir} 
                   onChange={(e) => setFormData({...formData, tglLahir: e.target.value})} 
                   className="border border-gray-200 rounded-lg p-2.5 outline-none focus:border-[#F5B301] text-[14px] text-[#1b2a4e] font-medium"

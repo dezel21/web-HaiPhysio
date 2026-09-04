@@ -2,39 +2,120 @@
 
 import { useState } from "react";
 import { CalendarBlank, Plus, ArrowLeft, WarningCircle, CheckCircle } from "@phosphor-icons/react";
+import { adminService } from "@/services/adminService";
 
 interface TabJadwalProps {
   isAddingException: boolean;
   setIsAddingException: (val: boolean) => void;
   therapistName?: string;
+  therapistId?: string;
 }
 
-export default function TabJadwal({ isAddingException, setIsAddingException, therapistName }: TabJadwalProps) {
-  const [excForm, setExcForm] = useState({ jenis: "", startDate: "", endDate: "", tipe: "seharian", startTime: "", endTime: "", alasan: "" });
+export default function TabJadwal({ isAddingException, setIsAddingException, therapistName, therapistId }: TabJadwalProps) {
+  const [excForm, setExcForm] = useState({ 
+    jenis: "", 
+    startDate: "", 
+    endDate: "", 
+    tipe: "seharian", 
+    startTime: "08:00", 
+    endTime: "16:00", 
+    alasan: "" 
+  });
   const [isErrorBentrok, setIsErrorBentrok] = useState(false);
-  const [showExceptionToast, setShowExceptionToast] = useState(false);
+  const [bentrokMsg, setBentrokMsg] = useState("");
+  const [isChecking, setIsChecking] = useState(false);
+  const [toast, setToast] = useState<{ show: boolean; message: string; type: "success" | "warning" | "error" }>({
+    show: false,
+    message: "",
+    type: "success"
+  });
+
+  const triggerToast = (message: string, type: "success" | "warning" | "error" = "success") => {
+    setToast({ show: true, message, type });
+    setTimeout(() => {
+      setToast(prev => ({ ...prev, show: false }));
+    }, 3000);
+  };
 
   const [exceptionList, setExceptionList] = useState([
     { tgl: "24 Okt 2026", hari: "Selasa", ket: "Pelatihan Sertifikasi Dry Needling", st: "Libur Seharian", isYellow: false },
     { tgl: "30 Okt 2026", hari: "Senin", ket: "Kunjungan Rumah Sakit Partner", st: "Hanya Pagi (08:00 - 10:00)", isYellow: true }
   ]);
 
-  const handleSimpanPengecualian = () => {
-    if (excForm.tipe === "seharian") {
-      setIsErrorBentrok(true);
+  const handleSimpanPengecualian = async () => {
+    // 1. Validasi Input Form Terlebih Dahulu dengan Toast
+    if (!excForm.jenis) {
+      triggerToast("Silakan pilih Jenis Pengecualian terlebih dahulu!", "warning");
       return;
     }
-    const newExc = {
-      tgl: "20 Nov 2026", hari: "Selasa",
-      ket: excForm.jenis || "Keperluan Dokter / Cuti",
-      st: `(${excForm.startTime || "08:00"} - ${excForm.endTime || "12:00"})`, isYellow: true
-    };
-    setExceptionList([...exceptionList, newExc]);
-    setIsAddingException(false);
+    if (!excForm.startDate) {
+      triggerToast("Silakan pilih Tanggal Mulai terlebih dahulu!", "warning");
+      return;
+    }
+
+    const effectiveEndDate = excForm.endDate || excForm.startDate;
+    setIsChecking(true);
     setIsErrorBentrok(false);
-    setExcForm({ jenis: "", startDate: "", endDate: "", tipe: "seharian", startTime: "", endTime: "", alasan: "" });
-    setShowExceptionToast(true);
-    setTimeout(() => setShowExceptionToast(false), 3000);
+
+    try {
+      // 2. Cek apakah ada booking aktif pasien di tanggal/rentang tersebut
+      const bookingsRes = await adminService.getBookings();
+      const allBookings = bookingsRes.data?.bookings || bookingsRes.bookings || [];
+
+      // Cari booking terkonfirmasi untuk terapis ini di rentang tanggal cuti
+      const clashingBookings = allBookings.filter((b: any) => {
+        const matchTherapist = therapistId 
+          ? (b.therapistId === therapistId || b.therapist_id === therapistId)
+          : (therapistName && (b.therapistName || b.therapist_name || "").toLowerCase().includes(therapistName.toLowerCase()));
+
+        if (!matchTherapist) return false;
+
+        const bookingDate = (b.bookingDate || b.slotDate || b.slot_date || "").substring(0, 10);
+        const status = (b.bookingStatus || b.status || "").toLowerCase();
+
+        // Hanya booking berstatus terkonfirmasi yang dianggap bentrok
+        const isConfirmed = status === "terkonfirmasi" || status === "aktif" || status === "confirmed";
+        if (!isConfirmed) return false;
+
+        // Cek apakah tanggal booking berada di antara startDate dan endDate
+        const inDateRange = bookingDate >= excForm.startDate && bookingDate <= effectiveEndDate;
+        return inDateRange;
+      });
+
+      if (clashingBookings.length > 0) {
+        setIsErrorBentrok(true);
+        const patientNames = clashingBookings.map((b: any) => b.patientName || b.patient_name || "Pasien").slice(0, 3).join(", ");
+        setBentrokMsg(`Jadwal bentrok dengan ${clashingBookings.length} sesi pasien terkonfirmasi (${patientNames}${clashingBookings.length > 3 ? ", dst." : ""}). Silakan jadwalkan ulang pasien terlebih dahulu.`);
+        return;
+      }
+
+      // 3. Jika tidak ada bentrok, tambahkan pengecualian ke daftar
+      const startDateObj = new Date(excForm.startDate);
+      const days = ["Minggu", "Senin", "Selasa", "Rabu", "Kamis", "Jumat", "Sabtu"];
+      const months = ["Jan", "Feb", "Mar", "Apr", "Mei", "Jun", "Jul", "Ags", "Sep", "Okt", "Nov", "Des"];
+      
+      const tglFormatted = `${startDateObj.getDate()} ${months[startDateObj.getMonth()]} ${startDateObj.getFullYear()}`;
+      const hariFormatted = days[startDateObj.getDay()];
+
+      const newExc = {
+        tgl: tglFormatted,
+        hari: hariFormatted,
+        ket: excForm.jenis,
+        st: excForm.tipe === "seharian" ? "Libur Seharian" : `(${excForm.startTime} - ${excForm.endTime})`,
+        isYellow: excForm.tipe !== "seharian"
+      };
+
+      setExceptionList([newExc, ...exceptionList]);
+      setIsAddingException(false);
+      setIsErrorBentrok(false);
+      setExcForm({ jenis: "", startDate: "", endDate: "", tipe: "seharian", startTime: "08:00", endTime: "16:00", alasan: "" });
+      triggerToast("Pengecualian Jadwal Berhasil Ditambahkan", "success");
+    } catch (err) {
+      console.error("Gagal memeriksa jadwal bentrok:", err);
+      triggerToast("Terjadi kesalahan saat memeriksa ketersediaan jadwal.", "error");
+    } finally {
+      setIsChecking(false);
+    }
   };
 
   return (
@@ -130,15 +211,27 @@ export default function TabJadwal({ isAddingException, setIsAddingException, the
 
               {/* Error Bentrok */}
               {isErrorBentrok && (
-                <div className="bg-red-50 border border-red-200 text-red-700 p-4 rounded-xl flex items-center gap-3 text-[13px]">
+                <div className="bg-red-50 border border-red-200 text-red-700 p-4 rounded-xl flex items-center gap-3 text-[13px] animate-in fade-in duration-200">
                   <WarningCircle size={20} weight="fill" className="shrink-0 text-red-500" />
-                  <span>Jadwal bentrok dengan 2 sesi pasien yang telah terkonfirmasi. Silakan jadwalkan ulang pasien terlebih dahulu.</span>
+                  <span>{bentrokMsg || "Jadwal bentrok dengan sesi pasien yang telah terkonfirmasi. Silakan jadwalkan ulang pasien terlebih dahulu."}</span>
                 </div>
               )}
 
               <div className="flex justify-end gap-3 mt-4">
-                <button onClick={() => setIsAddingException(false)} className="py-2.5 px-6 font-bold text-gray-500 hover:bg-gray-100 rounded-xl">Batal</button>
-                <button onClick={handleSimpanPengecualian} className="py-2.5 px-6 font-bold text-white bg-[#F5B301] hover:bg-[#dda101] rounded-xl shadow-sm">Simpan Pengecualian</button>
+                <button 
+                  onClick={() => setIsAddingException(false)} 
+                  disabled={isChecking}
+                  className="py-2.5 px-6 font-bold text-gray-500 hover:bg-gray-100 rounded-xl transition-colors disabled:opacity-50"
+                >
+                  Batal
+                </button>
+                <button 
+                  onClick={handleSimpanPengecualian} 
+                  disabled={isChecking}
+                  className="py-2.5 px-6 font-bold text-white bg-[#F5B301] hover:bg-[#dda101] rounded-xl shadow-sm transition-colors disabled:opacity-50"
+                >
+                  {isChecking ? "Memeriksa Jadwal..." : "Simpan Pengecualian"}
+                </button>
               </div>
             </div>
 
@@ -191,10 +284,21 @@ export default function TabJadwal({ isAddingException, setIsAddingException, the
         </div>
       )}
 
-      {showExceptionToast && (
-        <div className="fixed bottom-10 left-1/2 -translate-x-1/2 flex items-center gap-2 bg-[#ecfdf3] border border-[#a6f4c5] text-[#027a48] px-6 py-3 rounded-full shadow-lg z-50 animate-in slide-in-from-bottom-5 duration-300">
-          <CheckCircle size={20} weight="fill" />
-          <span className="text-[14px] font-bold">Pengecualian Jadwal Berhasil Ditambahkan</span>
+      {/* Floating Dynamic Toast */}
+      {toast.show && (
+        <div className={`fixed bottom-10 left-1/2 -translate-x-1/2 flex items-center gap-2.5 px-6 py-3.5 rounded-full shadow-xl z-50 animate-in slide-in-from-bottom-5 duration-300 border ${
+          toast.type === "warning" 
+            ? "bg-[#fffbeb] border-[#fde68a] text-[#b45309]" 
+            : toast.type === "error"
+            ? "bg-[#fef2f2] border-[#fecaca] text-[#b91c1c]"
+            : "bg-[#ecfdf3] border-[#a6f4c5] text-[#027a48]"
+        }`}>
+          {toast.type === "warning" || toast.type === "error" ? (
+            <WarningCircle size={22} weight="fill" className="shrink-0" />
+          ) : (
+            <CheckCircle size={22} weight="fill" className="shrink-0" />
+          )}
+          <span className="text-[14px] font-bold">{toast.message}</span>
         </div>
       )}
     </div>

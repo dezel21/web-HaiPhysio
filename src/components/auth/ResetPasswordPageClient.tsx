@@ -26,18 +26,16 @@ export default function ResetPasswordPageClient() {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [errors, setErrors] = useState<ResetErrors>({});
 
-  // Simulasi jeda 5 detik untuk pindah ke step buat sandi baru
+  // Deteksi token dari URL: jika ada ?token=xxx, langsung tampilkan form sandi baru
   useEffect(() => {
-    if (step !== "sent") {
-      return;
+    if (typeof window !== "undefined") {
+      const urlParams = new URLSearchParams(window.location.search);
+      const token = urlParams.get("token");
+      if (token) {
+        setStep("new-password");
+      }
     }
-
-    const timer = window.setTimeout(() => {
-      setStep("new-password");
-    }, 5000);
-
-    return () => window.clearTimeout(timer);
-  }, [step]);
+  }, []);
 
   const isCentered = step === "sent" || step === "success";
   

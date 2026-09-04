@@ -14,16 +14,16 @@ export default function AdminLayout({
       <AdminSidebar />
       
       {/* Area utama digeser ke kanan sejauh 280px (lebarnya Sidebar) */}
-      <div className="flex flex-col flex-1 ml-[280px]">
+      <div className="flex flex-col flex-1 ml-[280px] min-h-screen">
         {/* Header kita taro di atas area utama */}
         <AdminHeader />
         
         {/* Semua konten halaman lu (Dashboard, Profil, dll) bakal masuk ke {children} ini */}
-        <main className="p-8 w-full">
+        <main className="p-8 w-full flex-1">
           {children}
         </main>
       </div>
       
     </div>
   );
-}
+}

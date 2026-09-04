@@ -80,9 +80,15 @@ export default function AdminHeader() {
     window.addEventListener("adminProfileUpdated", handleProfileUpdate);
     window.addEventListener("adminNotifsUpdated", handleNotifsUpdate);
 
+    // Auto-refresh notifikasi setiap 15 detik (Live Update)
+    const notifInterval = setInterval(() => {
+      loadNotifications();
+    }, 15000);
+
     return () => {
       window.removeEventListener("adminProfileUpdated", handleProfileUpdate);
       window.removeEventListener("adminNotifsUpdated", handleNotifsUpdate);
+      clearInterval(notifInterval);
     };
   }, []);
 

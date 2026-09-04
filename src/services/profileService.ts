@@ -9,7 +9,7 @@ export const profileService = {
     return response.data;
   },
 
-  // Fungsi buat nyimpen editan nama profil (PATCH)
+  // Fungsi buat nyimpen editan profil (PATCH) — hanya full_name yang didukung backend
   updateProfile: async (data: { full_name: string }) => {
     const response = await authApi.patch("/profile", data);
     return response.data;

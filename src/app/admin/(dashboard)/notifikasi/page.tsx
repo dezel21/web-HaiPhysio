@@ -10,59 +10,78 @@ export default function NotifikasiPage() {
   const [activeTab, setActiveTab] = useState<"all" | "new" | "done" | "cancel">("all");
   const [isLoading, setIsLoading] = useState(true);
 
-  // Ambil list booking terbaru dari database untuk dijadikan notifikasi real-time
+  const fetchNotifications = async () => {
+    try {
+      const res = await adminService.getBookings();
+      const bookings = res.data?.bookings || res.bookings || [];
+
+      const readIds: number[] = JSON.parse(localStorage.getItem("admin_read_notifs") || "[]");
+
+      // Format timestamp nyata dari data booking
+      const formatTimestamp = (b: any): string => {
+        const rawDate = b.bookingDate || b.slotDate || b.slot_date || "";
+        const dateStr = rawDate.substring(0, 10);
+        const timeStr = (b.bookingTime || b.startTime || b.start_time || "").substring(0, 5);
+        if (dateStr && timeStr) return `${dateStr} • ${timeStr} WIB`;
+        if (dateStr) return dateStr;
+        return "Aktivitas Terkini";
+      };
+
+      // Sort dari terbaru ke terlama sebelum dipetakan ke notifikasi
+      const sorted = [...bookings].sort((a: any, b: any) => {
+        const dateA = a.bookingDate || a.slotDate || "";
+        const dateB = b.bookingDate || b.slotDate || "";
+        return dateB.localeCompare(dateA);
+      });
+
+      const mapped = sorted.slice(0, 15).map((b: any, index: number) => {
+        const status = (b.bookingStatus || b.status || "").toLowerCase();
+        const pName = b.patientName || b.patient_name || "Pasien";
+        const tName = b.therapistName || b.therapist_name || "Fisioterapis";
+        const sName = b.therapistSpecializations?.[0]?.name || b.serviceName || b.service_name || "Fisioterapi";
+        const rawDate = b.bookingDate || b.slotDate || b.slot_date || "Terjadwal";
+        const dateStr = rawDate.substring(0, 10);
+        const timeStr = (b.bookingTime || b.startTime || b.start_time || "").substring(0, 5);
+
+        let type = "new";
+        let title = "Booking Baru Masuk!";
+        let desc = `Pasien ${pName} mengajukan reservasi untuk ${sName} pada ${dateStr}${timeStr ? ` pukul ${timeStr} WIB` : ""} bersama ${tName}.`;
+
+        if (status === "selesai") {
+          type = "done";
+          title = "Sesi Terapi Selesai";
+          desc = `${tName} telah menyelesaikan sesi ${sName} bersama pasien ${pName}.`;
+        } else if (status === "dibatalkan") {
+          type = "cancel";
+          title = "Booking Dibatalkan oleh Pasien";
+          desc = `Pasien ${pName} telah membatalkan jadwal sesi ${sName} pada ${dateStr}${timeStr ? ` pukul ${timeStr} WIB` : ""}.`;
+        }
+
+        const notifId = index + 1;
+        return {
+          id: notifId,
+          bookingId: b.id,
+          type,
+          title,
+          desc,
+          time: formatTimestamp(b),
+          isRead: readIds.includes(notifId),
+        };
+      });
+
+      setNotifs(mapped);
+    } catch (error) {
+      console.error("Gagal memuat notifikasi:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const fetchNotifications = async () => {
-      try {
-        const res = await adminService.getBookings();
-        const bookings = res.data?.bookings || res.bookings || [];
-
-        // Cek ID notifikasi yang sudah pernah ditandai dibaca di localStorage
-        const readIds: number[] = JSON.parse(localStorage.getItem("admin_read_notifs") || "[]");
-
-        const mapped = bookings.slice(0, 15).map((b: any, index: number) => {
-          const status = (b.status || "").toLowerCase();
-          const pName = b.patientName || b.patient_name || "Pasien";
-          const tName = b.therapistName || b.therapist_name || "Fisioterapis";
-          const sName = b.serviceName || b.service_name || "Fisioterapi";
-          const dateStr = b.slotDate || b.slot_date || "Terjadwal";
-          const timeStr = (b.startTime || b.start_time || "").substring(0, 5);
-
-          let type = "new";
-          let title = "Booking Baru Masuk!";
-          let desc = `Pasien ${pName} mengajukan reservasi untuk ${sName} pada ${dateStr} (${timeStr} WIB) bersama ${tName}.`;
-
-          if (status === "selesai") {
-            type = "done";
-            title = "Sesi Terapi Selesai";
-            desc = `${tName} telah menyelesaikan sesi ${sName} bersama pasien ${pName}.`;
-          } else if (status === "dibatalkan") {
-            type = "cancel";
-            title = "Booking Dibatalkan oleh Pasien";
-            desc = `Pasien ${pName} telah membatalkan jadwal sesi ${sName} pada ${dateStr} (${timeStr} WIB).`;
-          }
-
-          const notifId = index + 1;
-          return {
-            id: notifId,
-            bookingId: b.id,
-            type,
-            title,
-            desc,
-            time: "Aktivitas Terkini",
-            isRead: readIds.includes(notifId),
-          };
-        });
-
-        setNotifs(mapped);
-      } catch (error) {
-        console.error("Gagal memuat notifikasi:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
     fetchNotifications();
+    // Auto-refresh setiap 30 detik
+    const interval = setInterval(fetchNotifications, 30000);
+    return () => clearInterval(interval);
   }, []);
 
   // Tandai semua sudah dibaca & sinkronkan dengan Header

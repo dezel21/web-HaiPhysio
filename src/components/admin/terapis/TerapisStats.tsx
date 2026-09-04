@@ -9,7 +9,7 @@ interface TerapisStatsProps {
 
 export default function TerapisStats({ therapists, isLoading }: TerapisStatsProps) {
   const total = therapists.length;
-  const active = therapists.filter((t: any) => t.isActive !== false && t.is_active !== false).length;
+  const active = therapists.filter((t: any) => t.status === "aktif" || (t.status === undefined && t.isActive !== false && t.is_active !== false)).length;
   const inactive = total - active;
 
   return (

@@ -1,12 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { 
-  CaretRight, CaretDown, CloudArrowUp, GraduationCap, Phone, EnvelopeSimple, Info, CheckCircle, Clock 
+  CaretRight, CaretDown, GraduationCap, Phone, EnvelopeSimple, Info, CheckCircle, Clock, WarningCircle 
 } from "@phosphor-icons/react";
 import { adminService } from "@/services/adminService";
+import { bookingService } from "@/services/bookingService";
 
 export default function TambahTerapisPage() {
   const router = useRouter();
@@ -22,8 +23,33 @@ export default function TambahTerapisPage() {
     pendidikan: ""
   });
   
-  const [showToast, setShowToast] = useState(false);
+  const [focusAreasList, setFocusAreasList] = useState<any[]>([]);
+  const [toast, setToast] = useState<{ show: boolean; message: string; type: "success" | "warning" | "error" }>({
+    show: false,
+    message: "",
+    type: "success"
+  });
   const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    const loadFocusAreas = async () => {
+      try {
+        const res = await bookingService.getFocusAreas();
+        const list = res.data?.focus_areas || res.data?.focusAreas || res.focus_areas || res.focusAreas || res.data || [];
+        setFocusAreasList(list);
+      } catch (err) {
+        console.error("Gagal memuat focus areas:", err);
+      }
+    };
+    loadFocusAreas();
+  }, []);
+
+  const triggerToast = (message: string, type: "success" | "warning" | "error" = "success") => {
+    setToast({ show: true, message, type });
+    setTimeout(() => {
+      setToast(prev => ({ ...prev, show: false }));
+    }, 3000);
+  };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -33,31 +59,53 @@ export default function TambahTerapisPage() {
     e.preventDefault();
 
     if (!formData.nama.trim() || !formData.sip.trim()) {
-      alert("Nama Lengkap dan Nomor SIP wajib diisi!");
+      triggerToast("Nama Lengkap dan Nomor SIP wajib diisi!", "warning");
+      return;
+    }
+
+    // Cari focus_id yang cocok
+    let matchedFocus = focusAreasList.find((f: any) => 
+      (formData.spesialisasi || "").toLowerCase().includes((f.name || "").toLowerCase()) ||
+      (f.name || "").toLowerCase().includes((formData.spesialisasi || "").toLowerCase())
+    );
+
+    // Fallback jika belum ter-fetch
+    const focusIds = matchedFocus?.id ? [matchedFocus.id] : focusAreasList.length > 0 ? [focusAreasList[0].id] : [];
+
+    if (focusIds.length === 0) {
+      // Coba reload focus areas
+      const res = await bookingService.getFocusAreas();
+      const list = res.data?.focus_areas || res.data?.focusAreas || res.focus_areas || res.focusAreas || res.data || [];
+      if (list.length > 0) {
+        focusIds.push(list[0].id);
+      }
+    }
+
+    if (focusIds.length === 0) {
+      triggerToast("Layanan fokus belum tersedia di sistem. Hubungi administrator.", "error");
       return;
     }
 
     setIsSubmitting(true);
     try {
       await adminService.createTherapist({
-        name: formData.nama,
+        full_name: formData.nama,
         sip: formData.sip,
-        specialization: formData.spesialisasi,
-        scheduleDays: formData.jadwal,
         phone: formData.telepon,
         email: formData.email,
         education: formData.pendidikan,
-        is_active: true,
+        total_patients_label: "0 Pasien",
+        focus_ids: focusIds,
       });
 
-      setShowToast(true);
+      triggerToast("Data Terapis Baru Berhasil Disimpan!", "success");
       setTimeout(() => {
-        setShowToast(false);
         router.push("/admin/terapis");
       }, 1500);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Gagal menambahkan terapis:", error);
-      alert("Gagal mendaftarkan terapis baru. Silakan periksa kembali data inputan.");
+      const errMsg = error.response?.data?.message || "Gagal mendaftarkan terapis baru. Silakan periksa kembali data inputan.";
+      triggerToast(errMsg, "error");
     } finally {
       setIsSubmitting(false);
     }
@@ -289,11 +337,21 @@ export default function TambahTerapisPage() {
         </div>
       </div>
 
-      {/* --- TOAST NOTIFIKASI SUKSES --- */}
-      {showToast && (
-        <div className="fixed bottom-10 left-1/2 -translate-x-1/2 flex items-center gap-2 bg-[#ecfdf3] border border-[#a6f4c5] text-[#027a48] px-6 py-3 rounded-full shadow-[0_8px_30px_rgba(2,122,72,0.1)] z-50 animate-in slide-in-from-bottom-5 duration-300">
-          <CheckCircle size={20} weight="fill" />
-          <span className="text-[14px] font-bold">Data Terapis Baru Berhasil Disimpan</span>
+      {/* --- TOAST NOTIFIKASI DINAMIS --- */}
+      {toast.show && (
+        <div className={`fixed bottom-10 left-1/2 -translate-x-1/2 flex items-center gap-2.5 px-6 py-3.5 rounded-full shadow-xl z-50 animate-in slide-in-from-bottom-5 duration-300 border ${
+          toast.type === "warning" 
+            ? "bg-[#fffbeb] border-[#fde68a] text-[#b45309]" 
+            : toast.type === "error"
+            ? "bg-[#fef2f2] border-[#fecaca] text-[#b91c1c]"
+            : "bg-[#ecfdf3] border-[#a6f4c5] text-[#027a48]"
+        }`}>
+          {toast.type === "warning" || toast.type === "error" ? (
+            <WarningCircle size={22} weight="fill" className="shrink-0" />
+          ) : (
+            <CheckCircle size={22} weight="fill" className="shrink-0" />
+          )}
+          <span className="text-[14px] font-bold">{toast.message}</span>
         </div>
       )}
 

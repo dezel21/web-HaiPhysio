@@ -36,9 +36,9 @@ export default function BookingTable({ bookings, isLoading, onRefresh }: Booking
     if (!selectedBooking) return;
     setIsProcessing(true);
     try {
-      await adminService.updateBookingStatus(selectedBooking.id, "dibatalkan");
+      await adminService.updateBookingStatus(selectedBooking.id, "Dibatalkan", cancelReason);
       setIsCancelModalOpen(false);
-      setToastMessage(`Booking ${selectedBooking.bookingReferenceCode || selectedBooking.code} berhasil dibatalkan`);
+      setToastMessage(`Booking ${selectedBooking.referenceCode || selectedBooking.bookingReferenceCode || selectedBooking.code} berhasil dibatalkan`);
       setShowToast(true);
       setTimeout(() => setShowToast(false), 3000);
       onRefresh();
@@ -53,7 +53,7 @@ export default function BookingTable({ bookings, isLoading, onRefresh }: Booking
   // Tandai Sesi Selesai ke API
   const handleMarkDone = async (booking: any) => {
     try {
-      await adminService.updateBookingStatus(booking.id, "selesai");
+      await adminService.updateBookingStatus(booking.id, "Selesai");
       setToastMessage(`Sesi ${booking.patientName || booking.patient_name} telah selesai`);
       setShowToast(true);
       setTimeout(() => setShowToast(false), 3000);
@@ -80,7 +80,7 @@ export default function BookingTable({ bookings, isLoading, onRefresh }: Booking
     } else if (status === "dibatalkan") {
       label = "Dibatalkan";
       colorClass = "border-red-300 text-red-500 bg-red-50/40";
-    } else if (status === "tidak_hadir") {
+    } else if (status === "tidak_hadir" || status === "tidak hadir") {
       label = "Tidak Hadir";
       colorClass = "border-orange-300 text-orange-500 bg-orange-50/40";
     }
@@ -129,11 +129,16 @@ export default function BookingTable({ bookings, isLoading, onRefresh }: Booking
                 const pName = row.patientName || row.patient_name || "Pasien";
                 const pPhone = row.patientPhone || row.patient_phone || "-";
                 const tName = row.therapistName || row.therapist_name || "-";
-                const sName = row.serviceName || row.service_name || "Fisioterapi";
-                const dateStr = row.slotDate || row.slot_date || "-";
-                const timeStr = `${(row.startTime || row.start_time || "").substring(0, 5)} - ${(row.endTime || row.end_time || "").substring(0, 5)} WIB`;
-                const refCode = row.bookingReferenceCode || row.reference_code || row.kode || `#HP-${String(row.id).substring(0, 6)}`;
-                const status = (row.status || "").toLowerCase();
+                // therapistSpecializations[0].name sebagai nama layanan
+                const sName = row.therapistSpecializations?.[0]?.name || row.serviceName || row.service_name || "Fisioterapi";
+                // bookingDate format ISO, ambil YYYY-MM-DD
+                const rawDate = row.bookingDate || row.slotDate || row.slot_date || "-";
+                const dateStr = rawDate.substring(0, 10);
+                // bookingTime sudah format HH:MM:SS
+                const timeStr = row.bookingTime ? `${row.bookingTime.substring(0, 5)} WIB` : (row.startTime || row.start_time || "").substring(0, 5);
+                const refCode = row.referenceCode || row.bookingReferenceCode || row.reference_code || row.kode || `#HP-${String(row.id).substring(0, 6)}`;
+                // bookingStatus dari backend: "Terkonfirmasi" / "Selesai" / "Dibatalkan"
+                const status = (row.bookingStatus || row.status || "").toLowerCase();
 
                 return (
                   <tr key={row.id} className="border-b border-gray-50 hover:bg-gray-50/50 transition-colors">
@@ -165,7 +170,7 @@ export default function BookingTable({ bookings, isLoading, onRefresh }: Booking
                       </div>
                     </td>
                     <td className="py-5 px-6 text-center">
-                      {renderStatus(row.status)}
+                      {renderStatus(row.bookingStatus || row.status)}
                     </td>
                     <td className="py-5 px-6 text-center">
                       {status === "terkonfirmasi" ? (

@@ -2,7 +2,8 @@
 
 import { useState } from "react";
 import { Eye, EyeSlash, X } from "@phosphor-icons/react";
-import { profileService } from "@/services/profileService"; // Manggil si kurir data
+import Link from "next/link";
+import { profileService } from "@/services/profileService";
 
 interface ModalGantiPasswordProps {
   isOpen: boolean;
@@ -143,14 +144,10 @@ export default function ModalGantiPassword({ isOpen, onClose }: ModalGantiPasswo
               </div>
             </div>
 
-            <button className="text-left text-[#3b82f6] text-[13px] font-medium mt-3 mb-8 hover:underline w-fit">
-              Lupa kata sandi?
-            </button>
-
             <button 
               onClick={handleSubmitPassword}
               disabled={isPasswordLoading}
-              className={`w-full py-3.5 rounded-xl text-white font-bold text-[15px] transition-colors ${isPasswordLoading ? 'bg-gray-400 cursor-not-allowed' : 'bg-[#F5B301] hover:bg-[#dda101]'}`}
+              className={`w-full py-3.5 mt-8 rounded-xl text-white font-bold text-[15px] transition-colors ${isPasswordLoading ? 'bg-gray-400 cursor-not-allowed' : 'bg-[#F5B301] hover:bg-[#dda101]'}`}
             >
               {isPasswordLoading ? 'Memproses...' : 'Konfirmasi Kata Sandi Baru'}
             </button>

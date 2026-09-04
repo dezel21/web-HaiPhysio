@@ -9,33 +9,36 @@ export default function ScheduleTable() {
   const [todaySchedules, setTodaySchedules] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
+  const fetchTodaySchedules = async () => {
+    try {
+      const now = new Date();
+      const y = now.getFullYear();
+      const m = String(now.getMonth() + 1).padStart(2, "0");
+      const d = String(now.getDate()).padStart(2, "0");
+      const todayStr = `${y}-${m}-${d}`;
+
+      const res = await adminService.getBookings();
+      const allBookings = res.data?.bookings || res.bookings || [];
+
+      const filteredToday = allBookings.filter((b: any) => {
+        // bookingDate format ISO: "2026-08-31T00:00:00.000Z", ambil substring YYYY-MM-DD
+        const rawDate = b.bookingDate || b.slotDate || b.slot_date || "";
+        return rawDate.substring(0, 10) === todayStr;
+      });
+
+      setTodaySchedules(filteredToday);
+    } catch (error) {
+      console.error("Gagal menarik jadwal hari ini:", error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const fetchTodaySchedules = async () => {
-      try {
-        const now = new Date();
-        const y = now.getFullYear();
-        const m = String(now.getMonth() + 1).padStart(2, "0");
-        const d = String(now.getDate()).padStart(2, "0");
-        const todayStr = `${y}-${m}-${d}`;
-
-        const res = await adminService.getBookings();
-        const allBookings = res.data?.bookings || res.bookings || [];
-
-        // Filter hanya booking untuk HARI INI
-        const filteredToday = allBookings.filter((b: any) => {
-          const slotDate = b.slotDate || b.slot_date || "";
-          return slotDate === todayStr;
-        });
-
-        setTodaySchedules(filteredToday);
-      } catch (error) {
-        console.error("Gagal menarik jadwal hari ini:", error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
     fetchTodaySchedules();
+    // Auto-refresh setiap 30 detik
+    const interval = setInterval(fetchTodaySchedules, 30000);
+    return () => clearInterval(interval);
   }, []);
 
   const renderLayananBadge = (layanan: string) => {
@@ -79,11 +82,17 @@ export default function ScheduleTable() {
     );
   };
 
-  const formatJam = (start?: string, end?: string) => {
-    if (!start) return "-";
-    const s = start.substring(0, 5);
-    const e = end ? end.substring(0, 5) : "";
-    return e ? `${s} - ${e} WIB` : `${s} WIB`;
+  const formatJam = (bookingTime?: string) => {
+    if (!bookingTime) return "-";
+    return `${bookingTime.substring(0, 5)} WIB`;
+  };
+
+  const getLayananName = (b: any): string => {
+    // API tidak punya serviceName, pakai therapistSpecializations[0].name
+    if (b.therapistSpecializations?.length > 0) {
+      return b.therapistSpecializations[0].name || "Fisioterapi";
+    }
+    return b.serviceName || b.service_name || "Fisioterapi";
   };
 
   return (
@@ -92,14 +101,21 @@ export default function ScheduleTable() {
       {/* Header Tabel */}
       <div className="px-6 py-5 border-b border-gray-100 flex items-center justify-between">
         <div className="flex flex-col gap-0.5">
-          <h3 className="text-[18px] font-bold text-[#1b2a4e]">Jadwal Sesi Hari Ini</h3>
+          <div className="flex items-center gap-2">
+            <h3 className="text-[18px] font-bold text-[#1b2a4e]">Jadwal Sesi Hari Ini</h3>
+            {/* Live indicator */}
+            <span className="relative flex h-2 w-2 ml-1">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+            </span>
+          </div>
           <span className="text-[13px] text-gray-500">
             {isLoading ? "Memuat jadwal..." : `Total ${todaySchedules.length} sesi hari ini`}
           </span>
         </div>
 
-        <Link 
-          href="/admin/booking" 
+        <Link
+          href="/admin/booking"
           className="text-[13px] font-bold text-[#D69A00] hover:text-[#F5B301] flex items-center gap-1 transition-colors"
         >
           Lihat Semua Booking
@@ -139,11 +155,11 @@ export default function ScheduleTable() {
               {todaySchedules.map((row: any, index: number) => (
                 <tr key={row.id} className="border-b border-gray-50 hover:bg-gray-50/50 transition-colors">
                   <td className="py-4 px-6 text-[14px] text-gray-500">{index + 1}</td>
-                  <td className="py-4 px-6 text-[14px] text-gray-600 font-medium">{formatJam(row.startTime || row.start_time, row.endTime || row.end_time)}</td>
+                  <td className="py-4 px-6 text-[14px] text-gray-600 font-medium">{formatJam(row.bookingTime || row.startTime || row.start_time)}</td>
                   <td className="py-4 px-6 text-[14px] font-bold text-[#1b2a4e]">{row.patientName || row.patient_name}</td>
                   <td className="py-4 px-6 text-[14px] text-[#1b2a4e]">{row.therapistName || row.therapist_name}</td>
-                  <td className="py-4 px-6 text-center">{renderLayananBadge(row.serviceName || row.service_name || "Fisioterapi")}</td>
-                  <td className="py-4 px-6 text-center">{renderStatusBadge(row.status)}</td>
+                  <td className="py-4 px-6 text-center">{renderLayananBadge(getLayananName(row))}</td>
+                  <td className="py-4 px-6 text-center">{renderStatusBadge(row.bookingStatus || row.status)}</td>
                 </tr>
               ))}
             </tbody>

@@ -1,13 +1,28 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import { CheckCircle, CaretDown } from "@phosphor-icons/react";
 import { adminService } from "@/services/adminService";
+import { bookingService } from "@/services/bookingService";
 
 export default function TabInfoDasar({ formData, setFormData, therapistId }: any) {
   const [showToast, setShowToast] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [focusAreasList, setFocusAreasList] = useState<any[]>([]);
+
+  useEffect(() => {
+    const loadFocusAreas = async () => {
+      try {
+        const res = await bookingService.getFocusAreas();
+        const list = res.data?.focus_areas || res.data?.focusAreas || res.focus_areas || res.focusAreas || res.data || [];
+        setFocusAreasList(list);
+      } catch (err) {
+        console.error("Gagal memuat focus areas:", err);
+      }
+    };
+    loadFocusAreas();
+  }, []);
 
   const handleSaveInfo = async () => {
     if (!formData.nama?.trim() || !formData.sip?.trim()) {
@@ -18,21 +33,33 @@ export default function TabInfoDasar({ formData, setFormData, therapistId }: any
     setIsSaving(true);
     try {
       if (therapistId) {
-        await adminService.updateTherapist(therapistId, {
-          name: formData.nama,
+        // Cari focus_id yang cocok berdasarkan nama spesialisasi
+        const matchedFocus = focusAreasList.find((f: any) => 
+          (formData.spesialisasi || "").toLowerCase().includes((f.name || "").toLowerCase()) ||
+          (f.name || "").toLowerCase().includes((formData.spesialisasi || "").toLowerCase())
+        );
+
+        const payload: any = {
+          full_name: formData.nama,
           sip: formData.sip,
-          specialization: formData.spesialisasi,
           phone: formData.telepon,
           email: formData.email,
           education: formData.pendidikan,
-        });
+        };
+
+        if (matchedFocus?.id) {
+          payload.focus_ids = [matchedFocus.id];
+        }
+
+        await adminService.updateTherapist(therapistId, payload);
       }
 
       setShowToast(true);
       setTimeout(() => setShowToast(false), 3000);
-    } catch (error) {
+    } catch (error: any) {
       console.error("Gagal update data terapis:", error);
-      alert("Gagal menyimpan perubahan data terapis.");
+      const errMsg = error.response?.data?.message || "Gagal menyimpan perubahan data terapis.";
+      alert(errMsg);
     } finally {
       setIsSaving(false);
     }

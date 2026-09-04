@@ -44,22 +44,25 @@ export default function PasienTable({ patients, isLoading, searchQuery }: Pasien
     const headers = ["No", "ID Pasien", "Nama Lengkap", "Email", "Nomor Telepon", "Kunjungan Terakhir", "Layanan Terakhir", "Total Sesi"];
     const rows = filteredData.map((p, i) => {
       const pCode = p.patientCode || p.code || `P-${String(p.id).padStart(3, "0")}`;
+      const visitDate = p.lastVisitDate || p.lastBookingDate || "-";
       return [
         i + 1,
         pCode,
         `"${p.name || p.fullName || "-"}"`,
         `"${p.email || "-"}"`,
         `"${p.phone || "-"}"`,
-        `"${p.lastVisitDate || p.lastBookingDate || "-"}"`,
+        `" ${visitDate}"`,
         `"${p.lastService || p.serviceName || "Fisioterapi"}"`,
         p.totalSessions || p.totalBookings || 1,
       ];
     });
 
-    const csvContent = "data:text/csv;charset=utf-8," + [headers.join(","), ...rows.map(r => r.join(","))].join("\n");
-    const encodedUri = encodeURI(csvContent);
+    const csvContent = "\uFEFF" + [headers.join(";"), ...rows.map(r => r.join(";"))].join("\n");
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+
     const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
+    link.setAttribute("href", url);
     link.setAttribute("download", `Data_Pasien_HaiPhysio_${new Date().toISOString().substring(0, 10)}.csv`);
     document.body.appendChild(link);
     link.click();
@@ -140,7 +143,8 @@ export default function PasienTable({ patients, isLoading, searchQuery }: Pasien
               {paginatedData.map((row) => {
                 const pName = row.name || row.fullName || "Pasien";
                 const pCode = row.patientCode || row.code || `P-${String(row.id).padStart(3, "0")}`;
-                const pPhone = row.phone || row.email || "-";
+                const pPhone = row.phone || "-";
+                const pEmail = row.email || "";
                 const lastDate = row.lastVisitDate || row.lastBookingDate || "-";
                 const serviceName = row.lastService || row.serviceName || "Fisioterapi";
                 const totalSessions = row.totalSessions || row.totalBookings || 1;
@@ -157,6 +161,9 @@ export default function PasienTable({ patients, isLoading, searchQuery }: Pasien
                         <div className="flex flex-col">
                           <span className="text-[14px] font-bold text-[#1b2a4e]">{pName}</span>
                           <span className="text-[12px] text-gray-400">{pPhone}</span>
+                          {pEmail && pPhone !== pEmail && (
+                            <span className="text-[12px] text-gray-400">{pEmail}</span>
+                          )}
                         </div>
                       </div>
                     </td>

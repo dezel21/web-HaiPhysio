@@ -42,7 +42,7 @@ function EditTerapisContent() {
           setFormData({
             nama: target.name || target.fullName || "",
             sip: target.sip || "",
-            spesialisasi: target.specialization || "Fisioterapi Muskuloskeletal",
+            spesialisasi: target.specializations?.[0]?.name ? `Fisioterapi ${target.specializations[0].name}` : target.specialization || "Fisioterapi Muskuloskeletal",
             telepon: target.phone || "",
             email: target.email || "",
             pendidikan: target.education || "",
@@ -65,7 +65,7 @@ function EditTerapisContent() {
     setIsActive(newStatus);
     if (therapistId) {
       try {
-        await adminService.updateTherapist(therapistId, { is_active: newStatus });
+        await adminService.updateTherapist(therapistId, { status: newStatus ? "aktif" : "nonaktif" });
       } catch (error) {
         console.error("Gagal update status aktif terapis:", error);
       }
@@ -163,6 +163,7 @@ function EditTerapisContent() {
           isAddingException={isAddingException} 
           setIsAddingException={setIsAddingException} 
           therapistName={formData.nama} 
+          therapistId={therapistId}
         />
       )}
       {activeTab === "riwayat" && !isAddingException && (

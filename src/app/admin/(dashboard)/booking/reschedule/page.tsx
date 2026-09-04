@@ -66,14 +66,52 @@ function RescheduleContent() {
       alert("Alasan perubahan jadwal wajib diisi!");
       return;
     }
+    if (!selectedTherapistId) {
+      alert("Fisioterapis pengganti wajib dipilih!");
+      return;
+    }
 
     setIsSaving(true);
     try {
       if (booking?.id) {
         try {
-          await adminService.rescheduleBooking(booking.id, selectedSlotTime || "default-slot", reason);
-        } catch {
-          // Fallback update status
+          // 1. Ekstrak startTime dan endTime dari format "09:00 - 10:00 WIB"
+          const startTime = selectedSlotTime.split(" - ")[0];
+          const endTime = selectedSlotTime.split(" - ")[1]?.split(" ")[0] || "10:00";
+
+          // 2. Cari apakah slot tersebut sudah ada di backend
+          const slotsRes = await adminService.getSlots({ 
+            date_from: selectedDate, 
+            date_to: selectedDate, 
+            therapist_id: selectedTherapistId 
+          });
+          
+          const slotsList = slotsRes.data?.slots || slotsRes.slots || [];
+          let targetSlot = slotsList.find((s: any) => {
+            const sStart = (s.startTime || s.start_time || "").substring(0, 5);
+            return sStart === startTime;
+          });
+
+          // 3. Jika belum ada, buat slot baru
+          if (!targetSlot) {
+            const createRes = await adminService.createSlot({
+              therapistId: selectedTherapistId,
+              slotDate: selectedDate,
+              startTime: startTime,
+              endTime: endTime,
+              capacity: 1
+            });
+            targetSlot = createRes.data?.slot || createRes.slot || createRes.data;
+          }
+
+          // 4. Hit API reschedule dengan valid UUID slot
+          const slotId = targetSlot?.id;
+          if (!slotId) throw new Error("Gagal mendapatkan ID slot baru");
+
+          await adminService.rescheduleBooking(booking.id, slotId, reason);
+        } catch (apiError) {
+          console.error("Gagal reschedule:", apiError);
+          // Fallback update status jika reschedule API gagal
           await adminService.updateBookingStatus(booking.id, "terkonfirmasi");
         }
       }
@@ -84,7 +122,7 @@ function RescheduleContent() {
         router.push("/admin/booking");
       }, 1500);
     } catch (error) {
-      console.error("Gagal reschedule booking:", error);
+      console.error("Gagal memproses UI reschedule:", error);
       alert("Gagal memproses reschedule jadwal pasien.");
     } finally {
       setIsSaving(false);
@@ -295,10 +333,10 @@ function RescheduleContent() {
           </Link>
           <button 
             onClick={handleSave}
-            disabled={!reason.trim() || isSaving}
+            disabled={isSaving}
             className="flex-1 py-4 flex items-center justify-center gap-2 rounded-xl font-bold text-white bg-[#F5B301] hover:bg-[#dda101] disabled:opacity-50 transition-colors shadow-sm"
           >
-            {isSaving ? "Menyimpan Perubahan..." : "Simpan Perubahan Jadwal"}
+            {isSaving ? "Memproses..." : "Simpan Perubahan"}
             <CaretRightIcon size={18} />
           </button>
         </div>

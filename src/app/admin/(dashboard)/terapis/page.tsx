@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Link from "next/link";
 import { Plus } from "@phosphor-icons/react";
 import TerapisStats from "@/components/admin/terapis/TerapisStats";
@@ -11,8 +11,8 @@ export default function AdminTerapisPage() {
   const [therapists, setTherapists] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
-  const loadTherapists = async () => {
-    setIsLoading(true);
+  const loadTherapists = useCallback(async (background = false) => {
+    if (!background) setIsLoading(true);
     try {
       const res = await adminService.getTherapists();
       const list = res.data?.therapists || res.therapists || [];
@@ -21,13 +21,16 @@ export default function AdminTerapisPage() {
       console.error("Gagal memuat data terapis:", error);
       setTherapists([]);
     } finally {
-      setIsLoading(false);
+      if (!background) setIsLoading(false);
     }
-  };
+  }, []);
 
   useEffect(() => {
     loadTherapists();
-  }, []);
+    // Auto-refresh setiap 30 detik (silent)
+    const interval = setInterval(() => loadTherapists(true), 30000);
+    return () => clearInterval(interval);
+  }, [loadTherapists]);
 
   return (
     <div className="w-full flex flex-col gap-8 pb-12">
